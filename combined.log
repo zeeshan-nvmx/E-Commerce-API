@@ -1,0 +1,11 @@
+{"level":"info","message":"Server running on port 4000","service":"your-service"}
+{"level":"info","message":"Server running on port 4000","service":"your-service"}
+{"level":"info","message":"Server running on port 4000","service":"your-service"}
+{"level":"info","message":"::1 - - [25/Mar/2024:13:45:54 +0000] \"POST /api/auth/register HTTP/1.1\" 201 451 \"-\" \"PostmanRuntime/7.37.0\"\n","service":"your-service"}
+{"level":"info","message":"::1 - - [25/Mar/2024:13:46:21 +0000] \"POST /api/auth/login HTTP/1.1\" 200 472 \"-\" \"PostmanRuntime/7.37.0\"\n","service":"your-service"}
+{"level":"info","message":"::1 - - [25/Mar/2024:13:46:47 +0000] \"POST /api/auth/forgot-password HTTP/1.1\" 500 84 \"-\" \"PostmanRuntime/7.37.0\"\n","service":"your-service"}
+{"level":"info","message":"Server running on port 4000","service":"your-service"}
+{"level":"info","message":"::1 - - [25/Mar/2024:13:50:30 +0000] \"POST /api/auth/forgot-password HTTP/1.1\" 200 37 \"-\" \"PostmanRuntime/7.37.0\"\n","service":"your-service"}
+{"level":"info","message":"::1 - - [25/Mar/2024:13:51:01 +0000] \"PUT /api/auth/reset-password/0a941453c9b29a17f2aadc6ac738788497e9ff7d HTTP/1.1\" 200 43 \"-\" \"PostmanRuntime/7.37.0\"\n","service":"your-service"}
+{"level":"info","message":"Server running on port 4000","service":"your-service"}
+{"level":"info","message":"::1 - - [25/Mar/2024:13:52:47 +0000] \"POST /api/auth/showme HTTP/1.1\" 200 161 \"-\" \"PostmanRuntime/7.37.0\"\n","service":"your-service"}
