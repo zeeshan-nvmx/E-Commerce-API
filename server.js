@@ -12,8 +12,8 @@ const fs = require('fs')
 
 // Import routes
 const authRoutes = require('./routes/authRoutes')
-// const categoryRoutes = require('./routes/categoryRoutes')
-// const productRoutes = require('./routes/productRoutes')
+const categoryRoutes = require('./routes/categoryRoutes')
+const productRoutes = require('./routes/productRoutes')
 // const cartRoutes = require('./routes/cartRoutes')
 // const orderRoutes = require('./routes/orderRoutes')
 // const adminRoutes = require('./routes/adminRoutes')
@@ -55,11 +55,11 @@ app.use(express.json())
 
 // Routes
 app.use('/api/auth', authRoutes)
-// app.use('/api/categories', categoryRoutes)
-// app.use('/api/products', productRoutes)
+app.use('/api/categories', categoryRoutes)
+app.use('/api/products', productRoutes)
 // app.use('/api/cart', cartRoutes)
 // app.use('/api/orders', orderRoutes)
-// app.use('/api/admin', adminRoutes)
+// app.use('/api/admin', adminRoutes)rrr
 
 // 404 handler
 app.use((req, res, next) => {
