@@ -14,6 +14,7 @@ const fs = require('fs')
 const authRoutes = require('./routes/authRoutes')
 const categoryRoutes = require('./routes/categoryRoutes')
 const productRoutes = require('./routes/productRoutes')
+const { log } = require('console')
 // const cartRoutes = require('./routes/cartRoutes')
 // const orderRoutes = require('./routes/orderRoutes')
 // const adminRoutes = require('./routes/adminRoutes')
@@ -75,8 +76,10 @@ app.use(errorHandler)
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 
   // Set up a cron job to delete log files every 7 days
+  
   cron.schedule(
     '0 0 * * 0',
     () => {
