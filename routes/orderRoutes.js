@@ -1,11 +1,13 @@
 const express = require('express')
 const router = express.Router()
-const { getOrders, getOrderById, createOrder, updateOrderToPaid, updateOrderToDelivered } = require('../controllers/orderController')
 const auth = require('../middleware/auth')
+const { getOrders, getOrderById, getShippingRates, createOrder, stripe_webhook, updateOrderToDelivered } = require('../controllers/orderController')
 
-router.route('/').get(auth, getOrders).post(auth, createOrder)
-router.route('/:id').get(auth, getOrderById)
-router.route('/:id/pay').put(auth, updateOrderToPaid)
-router.route('/:id/deliver').put(auth, updateOrderToDelivered)
+router.get('/', auth, getOrders)
+router.get('/:id', auth, getOrderById)
+router.post('/shipping-rates', auth, getShippingRates)
+router.post('/', auth, createOrder)
+router.post('/stripe-webhook', stripe_webhook)
+router.put('/:id/deliver', auth, updateOrderToDelivered)
 
 module.exports = router

@@ -49,7 +49,7 @@ const login = async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password', error: 'Invalid email or password' })
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 }
 
@@ -116,7 +116,7 @@ const resetPassword = async (req, res) => {
 
     res.json({ message: 'Password updated successfully' })
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 }
 

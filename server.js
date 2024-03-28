@@ -10,39 +10,28 @@ const winston = require('winston')
 const cron = require('node-cron')
 const fs = require('fs')
 
-// Import routes
-const authRoutes = require('./routes/authRoutes')
-const categoryRoutes = require('./routes/categoryRoutes')
-const productRoutes = require('./routes/productRoutes')
-const { log } = require('console')
-// const cartRoutes = require('./routes/cartRoutes')
-// const orderRoutes = require('./routes/orderRoutes')
-// const adminRoutes = require('./routes/adminRoutes')
-
 dotenv.config()
 connectDB()
 
 const app = express()
 
-// Configure winston logger
+// Configure winston logger to log both to console and files
 const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.json(),
-  defaultMeta: { service: 'your-service' },
-  transports: [new winston.transports.File({ filename: 'error.log', level: 'error' }), new winston.transports.File({ filename: 'combined.log' })],
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' }),
+  ],
 })
 
-// Create a stream object for morgan logging
-const stream = {
-  write: (message) => logger.info(message),
-}
+// Modify morgan setup to use winston for logging HTTP requests
+app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }))
 
 // Security middlewares
 app.use(helmet())
 app.use(cors())
-
-// Logging middleware
-app.use(morgan('combined', { stream }))
 
 // Rate limiting (to prevent brute-force attacks)
 const limiter = rateLimit({
@@ -54,13 +43,19 @@ app.use(limiter)
 // Body parser
 app.use(express.json())
 
+// Import routes
+const authRoutes = require('./routes/authRoutes')
+const categoryRoutes = require('./routes/categoryRoutes')
+const productRoutes = require('./routes/productRoutes')
+const orderRoutes = require('./routes/orderRoutes')
+// const adminRoutes = require('./routes/adminRoutes');
+
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/products', productRoutes)
-// app.use('/api/cart', cartRoutes)
-// app.use('/api/orders', orderRoutes)
-// app.use('/api/admin', adminRoutes)rrr
+app.use('/api/orders', orderRoutes)
+// app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
@@ -76,10 +71,8 @@ app.use(errorHandler)
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`)
-  console.log(`Server running on port ${PORT}`)
 
   // Set up a cron job to delete log files every 7 days
-  
   cron.schedule(
     '0 0 * * 0',
     () => {
