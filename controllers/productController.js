@@ -9,23 +9,33 @@ const isValidObjectId = (id) => {
 
 const getProducts = async (req, res) => {
   try {
-    const { categories, colors, sizes } = req.query
+    const { categories, colors, sizes, page = 1, limit = 10 } = req.query
     const query = {}
 
     if (categories) {
       query.categories = { $in: categories.split(',') }
     }
-
     if (colors) {
       query['colors.name'] = { $in: colors.split(',') }
     }
-
     if (sizes) {
       query['colors.sizes.name'] = { $in: sizes.split(',') }
     }
 
-    const products = await Product.find(query)
-    res.json(products)
+    const skip = (page - 1) * limit
+    const totalProducts = await Product.countDocuments(query)
+    const products = await Product.find(query).skip(skip).limit(limit)
+
+    const response = {
+      data: {
+        products,
+        totalPages: Math.ceil(totalProducts / limit),
+        currentPage: page,
+      },
+      message: `Products successfully fetched, Showing page ${page} of ${Math.ceil(totalProducts / limit)} pages.`,
+    }
+
+    res.json(response)
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -37,7 +47,8 @@ const getProductById = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' })
     }
-    res.json(product)
+    res.json({
+      data: product, message: "Product was succesfully fetched" })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }

@@ -5,24 +5,35 @@ const royalMailAPI = require('../utils/royalMailAPI')
 const sendEmail = require('../utils/sendEmail')
 
 const getOrders = async (req, res) => {
-  console.log(req.user);
   try {
-    const orders = await Order.find({ userId: req.user.id }).populate('items.productId')
-    res.json(orders)
+    let orders
+    if (req.user.role === 'user') {
+      orders = await Order.find({ userId: req.user.id }).populate('items.productId')
+    } else {
+      orders = await Order.find().populate('items.productId')
+    }
+
+    res.json({ message: 'Orders fetched successfully', data: orders })
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'Something went wrong while fetching orders', error: error.message })
   }
 }
 
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate('items.productId')
+
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' })
+      return res.status(404).json({ message: 'Order not found', error: 'The requested order could not be found' })
     }
-    res.json(order)
+
+    if (req.user.role === 'user' && order.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized access', error: 'You do not have permission to access this order' })
+    }
+
+    res.json({ message: 'Order fetched successfully', data: order })
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'Something went wrong while fetching the order', error: error.message })
   }
 }
 
@@ -102,7 +113,7 @@ const createOrder = async (req, res) => {
 
     res.status(201).json({
       order: createdOrder,
-      paymentIntent: paymentIntent.client_secret,
+      // paymentIntent: paymentIntent.client_secret,
     })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })

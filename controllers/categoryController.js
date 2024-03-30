@@ -4,7 +4,7 @@ const { uploadToS3, deleteFromS3 } = require('../utils/s3')
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find()
-    res.status(200).json({ data: categories })
+    res.status(200).json({ message: "Categories fetched successfully", data: categories })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -16,7 +16,7 @@ const getCategoryById = async (req, res) => {
     if (!category) {
       return res.status(404).json({ message: 'Category not found' })
     }
-    res.status(200).json({ data: category })
+    res.status(200).json({ message: "Category fetched successfully", data: category })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
