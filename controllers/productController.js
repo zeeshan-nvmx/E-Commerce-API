@@ -1,6 +1,6 @@
-const Product = require('../models/Product');
-const Category = require('../models/Category');
-const { uploadToS3, deleteFromS3 } = require('../utils/s3');
+const Product = require('../models/Product')
+const Category = require('../models/Category')
+const { uploadToGCS, deleteFromGCS } = require('../utils/gcs')
 const { ObjectId } = require('mongodb')
 
 const isValidObjectId = (id) => {
@@ -41,6 +41,7 @@ const getProducts = async (req, res) => {
   }
 }
 
+
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -48,7 +49,9 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' })
     }
     res.json({
-      data: product, message: "Product was succesfully fetched" })
+      data: product,
+      message: 'Product was successfully fetched',
+    })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -62,13 +65,14 @@ const createProduct = async (req, res) => {
 
     const ids = categories.split(',').map((id) => id.trim())
     categoryIds = ids.filter(isValidObjectId).map((id) => ObjectId.createFromHexString(id))
-    
 
     if (categoryIds.length === 0) {
       return res.status(400).json({ message: 'Invalid category IDs' })
     }
 
-    const categoriesData = await Category.find({ _id: { $in: categoryIds } })
+    const categoriesData = await Category.find({
+      _id: { $in: categoryIds },
+    })
     if (categoriesData.length !== categoryIds.length) {
       return res.status(400).json({ message: 'Invalid category IDs' })
     }
@@ -76,7 +80,7 @@ const createProduct = async (req, res) => {
     const productImages = []
     if (req.files) {
       for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${file.originalname}`)
+        const imageUrl = await uploadToGCS(file, `products/${file.originalname}`)
         productImages.push(imageUrl)
       }
     }
@@ -87,14 +91,13 @@ const createProduct = async (req, res) => {
       price,
       categories: categoryIds,
       images: productImages,
-      colors: JSON.parse(colors)
+      colors: JSON.parse(colors),
     })
     res.status(201).json(product)
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
-
 
 const updateProduct = async (req, res) => {
   const { name, description, price, categories, colors } = req.body
@@ -116,12 +119,14 @@ const updateProduct = async (req, res) => {
 
       const ids = categories.split(',').map((id) => id.trim())
       categoryIds = ids.filter(isValidObjectId).map((id) => ObjectId.createFromHexString(id))
-      
+
       if (categoryIds.length === 0) {
         return res.status(400).json({ message: 'Invalid category IDs' })
       }
 
-      const categoriesData = await Category.find({ _id: { $in: categoryIds } })
+      const categoriesData = await Category.find({
+        _id: { $in: categoryIds },
+      })
       if (categoriesData.length !== categoryIds.length) {
         return res.status(400).json({ message: 'Invalid category IDs' })
       }
@@ -135,7 +140,7 @@ const updateProduct = async (req, res) => {
 
     if (req.files) {
       for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${file.originalname}`)
+        const imageUrl = await uploadToGCS(file, `products/${file.originalname}`)
         product.images.push(imageUrl)
       }
     }
@@ -155,7 +160,7 @@ const deleteProduct = async (req, res) => {
     }
 
     for (const imageUrl of product.images) {
-      await deleteFromS3(imageUrl.split('/').pop())
+      await deleteFromGCS(imageUrl.split('/').pop())
     }
 
     await product.remove()
@@ -177,7 +182,7 @@ const deleteProductImage = async (req, res) => {
       return res.status(404).json({ message: 'Image not found' })
     }
 
-    await deleteFromS3(req.params.imageId)
+    await deleteFromGCS(req.params.imageId)
     product.images = product.images.filter((url) => url !== imageUrl)
     await product.save()
 
@@ -195,167 +200,3 @@ module.exports = {
   deleteProduct,
   deleteProductImage,
 }
-
-
-/*
-const updateProduct = async (req, res) => {
-  const { name, description, price, categories, colors } = req.body
-
-  try {
-    const product = await Product.findById(req.params.id)
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' })
-    }
-
-    product.name = name || product.name
-    product.description = description || product.description
-    product.price = price || product.price
-
-    if (categories) {
-      const categoriesData = await Category.find({ _id: { $in: categories } })
-      if (categoriesData.length !== categories.length) {
-        return res.status(400).json({ message: 'Invalid category IDs' })
-      }
-      product.categories = categories
-    }
-
-    if (colors) {
-      product.colors = colors
-    }
-
-    if (req.files) {
-      for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${file.originalname}`)
-        product.images.push(imageUrl)
-      }
-    }
-
-    const updatedProduct = await product.save()
-    res.json(updatedProduct)
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
-}
-*/
-
-/*
-const createProduct = async (req, res) => {
-  const { name, description, price, categories, colors } = req.body
-
-  try {
-    const categoriesData = await Category.find({ _id: { $in: categories.map(mongoose.Types.ObjectId) } })
-    if (categoriesData.length !== categories.length) {
-      return res.status(400).json({ message: 'Invalid category IDs' })
-    }
-
-    const productImages = []
-    if (req.files) {
-      for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${file.originalname}`)
-        productImages.push(imageUrl)
-      }
-    }
-
-    const product = await Product.create({
-      name,
-      description,
-      price,
-      categories,
-      images: productImages,
-      colors,
-    })
-    res.status(201).json(product)
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
-}
-*/
-
-
-/*
-const createProduct = async (req, res) => {
-  const { name, description, price, categories, colors } = req.body
-
-  console.log(req.body);
-
-  try {
-    const categoryIds = Array.isArray(categories)
-      ? categories.filter(isValidObjectId).map((id) => new ObjectId(id))
-      : isValidObjectId(categories)
-      ? [new ObjectId(categories)]
-      : []
-
-    if (categoryIds.length === 0) {
-      return res.status(400).json({ message: 'Invalid category IDs' })
-    }
-
-    const categoriesData = await Category.find({ _id: { $in: categoryIds } })
-    if (categoriesData.length !== categoryIds.length) {
-      return res.status(400).json({ message: 'Invalid category IDs' })
-    }
-
-    const productImages = []
-    if (req.files) {
-      for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${file.originalname}`)
-        productImages.push(imageUrl)
-      }
-    }
-
-    const product = await Product.create({
-      name,
-      description,
-      price,
-      categories: categoryIds,
-      images: productImages,
-      colors,
-    })
-    res.status(201).json(product)
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
-}
-
-
-const updateProduct = async (req, res) => {
-  const { name, description, price, categories, colors } = req.body
-
-  try {
-    const product = await Product.findById(req.params.id)
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' })
-    }
-
-    product.name = name || product.name
-    product.description = description || product.description
-    product.price = price || product.price
-
-    if (categories) {
-      const categoryIds = categories.map(mongoose.Types.ObjectId)
-      const categoriesData = await Category.find({ _id: { $in: categoryIds } })
-      if (categoriesData.length !== categories.length) {
-        return res.status(400).json({ message: 'Invalid category IDs' })
-      }
-      product.categories = categoryIds
-    }
-
-    if (colors) {
-      product.colors = colors
-    }
-
-    if (req.files) {
-      for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${file.originalname}`)
-        product.images.push(imageUrl)
-      }
-    }
-
-    const updatedProduct = await product.save()
-    res.json(updatedProduct)
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
-}
-*/

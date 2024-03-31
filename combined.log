@@ -1,1 +1,39 @@
 {"level":"info","message":"Server running on port 4000","timestamp":"2024-03-30T10:24:49.243Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-30T21:58:56.248Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T06:59:17.359Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:00:31 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black&sizes=S,M HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:00:31.631Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:00:47 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:00:47.915Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:08:12.608Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:08:16.273Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:08:57 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 500 90 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:08:57.205Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:09:36.056Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:09:37 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 500 90 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:09:37.906Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:09:42 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 500 90 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:09:42.633Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:20:31.954Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:20:36 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 500 164 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:20:36.250Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:21:21.123Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:21:24 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 200 125 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:21:24.863Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:21:35 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black HTTP/1.1\" 200 125 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:21:35.637Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:21:38 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black&sizes=S,M HTTP/1.1\" 200 125 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:21:38.244Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:21:44 +0000] \"GET /api/products HTTP/1.1\" 200 1105 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:21:44.457Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:22:24.352Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:22:35 +0000] \"GET /api/products HTTP/1.1\" 500 158 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:22:35.876Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:23:14.863Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:23:18 +0000] \"GET /api/products HTTP/1.1\" 500 158 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:23:18.441Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:24:47.702Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:24:50 +0000] \"GET /api/products HTTP/1.1\" 200 1139 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:24:50.604Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:24:56 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 200 1139 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:24:56.797Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:25:01 +0000] \"GET /api/products?colors=Black HTTP/1.1\" 200 1139 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:25:01.011Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:25:39.887Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:25:44 +0000] \"GET /api/products HTTP/1.1\" 200 1543 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:25:44.086Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:25:46 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 200 1543 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:25:46.830Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:26:05.577Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:26:10 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 200 1139 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:26:10.701Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:26:17 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black HTTP/1.1\" 200 1139 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:26:17.246Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:26:22 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black&sizes=S,M HTTP/1.1\" 200 339 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:26:22.690Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:26:36.729Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:26:40.100Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:26:47.006Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:27:08.762Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:33:06.804Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:07:33:12 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black&sizes=S,M HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:33:12.663Z"}

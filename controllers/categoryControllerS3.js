@@ -1,10 +1,10 @@
 const Category = require('../models/Category')
-const { uploadToGCS, deleteFromGCS } = require('../utils/gcs')
+const { uploadToS3, deleteFromS3 } = require('../utils/s3')
 
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find()
-    res.status(200).json({ message: 'Categories fetched successfully', data: categories })
+    res.status(200).json({ message: "Categories fetched successfully", data: categories })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -16,7 +16,7 @@ const getCategoryById = async (req, res) => {
     if (!category) {
       return res.status(404).json({ message: 'Category not found' })
     }
-    res.status(200).json({ message: 'Category fetched successfully', data: category })
+    res.status(200).json({ message: "Category fetched successfully", data: category })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -24,6 +24,7 @@ const getCategoryById = async (req, res) => {
 
 const createCategory = async (req, res) => {
   const { name, description } = req.body
+
   try {
     const categoryExists = await Category.findOne({ name })
     if (categoryExists) {
@@ -32,16 +33,11 @@ const createCategory = async (req, res) => {
 
     let imageUrl = ''
     if (req.file) {
-      imageUrl = await uploadToGCS(req.file, `categories/${req.file.originalname}`)
+      imageUrl = await uploadToS3(req.file, `categories/${req.file.originalname}`)
     }
 
-    const category = await Category.create({
-      name,
-      description,
-      image: imageUrl,
-    })
-
-    res.status(201).json({ message: 'Category created successfully', data: category })
+    const category = await Category.create({ name, description, image: imageUrl })
+    res.status(201).json({ messsage: "Category created successfully", data: category })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -49,6 +45,7 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   const { name, description } = req.body
+
   try {
     const category = await Category.findById(req.params.id)
     if (!category) {
@@ -60,9 +57,9 @@ const updateCategory = async (req, res) => {
 
     if (req.file) {
       if (category.image) {
-        await deleteFromGCS(category.image.split('/').pop())
+        await deleteFromS3(category.image.split('/').pop())
       }
-      const imageUrl = await uploadToGCS(req.file, `categories/${req.file.originalname}`)
+      const imageUrl = await uploadToS3(req.file, `categories/${req.file.originalname}`)
       category.image = imageUrl
     }
 
@@ -81,7 +78,7 @@ const deleteCategory = async (req, res) => {
     }
 
     if (category.image) {
-      await deleteFromGCS(category.image.split('/').pop())
+      await deleteFromS3(category.image.split('/').pop())
     }
 
     await category.remove()
