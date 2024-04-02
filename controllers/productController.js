@@ -7,9 +7,43 @@ const isValidObjectId = (id) => {
   return ObjectId.isValid(id)
 }
 
+// const getProducts = async (req, res) => {
+//   try {
+//     const { categories, colors, sizes, page = 1, limit = 10 } = req.query
+//     const query = {}
+
+//     if (categories) {
+//       query.categories = { $in: categories.split(',') }
+//     }
+//     if (colors) {
+//       query['colors.name'] = { $in: colors.split(',') }
+//     }
+//     if (sizes) {
+//       query['colors.sizes.name'] = { $in: sizes.split(',') }
+//     }
+
+//     const skip = (page - 1) * limit
+//     const totalProducts = await Product.countDocuments(query)
+//     const products = await Product.find(query).skip(skip).limit(limit)
+
+//     const response = {
+//       data: {
+//         products,
+//         totalPages: Math.ceil(totalProducts / limit),
+//         currentPage: page,
+//       },
+//       message: `Products successfully fetched, Showing page ${page} of ${Math.ceil(totalProducts / limit)} pages.`,
+//     }
+
+//     res.json(response)
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
 const getProducts = async (req, res) => {
   try {
-    const { categories, colors, sizes, page = 1, limit = 10 } = req.query
+    const { categories, colors, sizes, page = 1, limit = 10, search = '' } = req.query
     const query = {}
 
     if (categories) {
@@ -22,9 +56,23 @@ const getProducts = async (req, res) => {
       query['colors.sizes.name'] = { $in: sizes.split(',') }
     }
 
+    // Full-text search query
+    if (search) {
+      query.$text = { $search: search }
+    }
+
     const skip = (page - 1) * limit
     const totalProducts = await Product.countDocuments(query)
-    const products = await Product.find(query).skip(skip).limit(limit)
+    let products
+
+    if (query.$text) {
+      products = await Product.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ score: { $meta: 'textScore' } }) // Sort by text score
+    } else {
+      products = await Product.find(query).skip(skip).limit(limit)
+    }
 
     const response = {
       data: {
@@ -40,7 +88,6 @@ const getProducts = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
-
 
 const getProductById = async (req, res) => {
   try {
@@ -93,7 +140,7 @@ const createProduct = async (req, res) => {
       images: productImages,
       colors: JSON.parse(colors),
     })
-    res.status(201).json(product)
+    res.status(201).json({ message: "Product created successfully", data: product })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -146,7 +193,7 @@ const updateProduct = async (req, res) => {
     }
 
     const updatedProduct = await product.save()
-    res.json(updatedProduct)
+    res.status(200).json(updatedProduct)
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }

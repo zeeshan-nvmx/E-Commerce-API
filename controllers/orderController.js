@@ -77,7 +77,7 @@ const createOrder = async (req, res) => {
           color: item.color,
           size: item.size,
           quantity: item.quantity,
-          price: product.price,
+          price: parseFloat(product.price.toFixed(2)), // Ensure price is formatted correctly
         }
       })
     )
@@ -85,11 +85,13 @@ const createOrder = async (req, res) => {
     // const shippingRates = await royalMailAPI.getShippingRates(shippingAddress)
     // const shippingPrice = shippingRates.rates[0].value
 
-    const shippingPrice = 5 // Temporary shipping price
+    const shippingPrice = parseFloat((5).toFixed(2)) // Temporary shipping price
 
     const itemsPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    const taxPrice = 0.1 * itemsPrice // 10% tax
-    const totalPrice = itemsPrice + shippingPrice + taxPrice
+    const formattedItemsPrice = parseFloat(itemsPrice.toFixed(2)) 
+
+    const taxPrice = parseFloat((0.1 * formattedItemsPrice).toFixed(2)) // 10% tax
+    const totalPrice = parseFloat((formattedItemsPrice + shippingPrice + taxPrice).toFixed(2)) 
 
     const order = new Order({
       userId: req.user.id,
@@ -111,14 +113,14 @@ const createOrder = async (req, res) => {
     //   metadata: { orderId: createdOrder._id.toString() },
     // })
 
-    res.status(201).json({
-      order: createdOrder,
-      // paymentIntent: paymentIntent.client_secret,
+    res.status(201).json({ message: 'Order placed successfully', data: createdOrder, // paymentIntent: paymentIntent.client_secret,
     })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
+
 
 const handlePaymentSuccess = async (paymentIntent) => {
   try {
@@ -423,3 +425,78 @@ module.exports = {
 //   stripe_webhook,
 //   updateOrderToDelivered,
 // }
+
+/*    
+  const createOrder = async (req, res) => {
+  const { shippingAddress, billingAddress, paymentMethod, cartItems } = req.body
+
+  try {
+    if (!cartItems || cartItems.length === 0) {
+      return res.status(400).json({ message: 'Cart is empty' })
+    }
+
+    const orderItems = await Promise.all(
+      cartItems.map(async (item) => {
+        const product = await Product.findById(item.productId)
+        if (!product) {
+          throw new Error(`Product with ID ${item.productId} not found`)
+        }
+
+        const color = product.colors.find((c) => c.name === item.color)
+        if (!color) {
+          throw new Error(`Color ${item.color} not found for product ${product.name}`)
+        }
+
+        const size = color.sizes.find((s) => s.name === item.size)
+        if (!size || size.quantity < item.quantity) {
+          throw new Error(`Insufficient quantity for size ${item.size} of product ${product.name}`)
+        }
+
+        return {
+          productId: item.productId,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity,
+          price: product.price,
+        }
+      })
+    )
+
+    // const shippingRates = await royalMailAPI.getShippingRates(shippingAddress)
+    // const shippingPrice = shippingRates.rates[0].value
+
+    const shippingPrice = 5 // Temporary shipping price
+
+    const itemsPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0)
+    const taxPrice = 0.1 * itemsPrice // 10% tax
+    const totalPrice = itemsPrice + shippingPrice + taxPrice
+
+    const order = new Order({
+      userId: req.user.id,
+      items: orderItems,
+      shippingAddress,
+      billingAddress,
+      paymentMethod,
+      taxPrice,
+      shippingPrice,
+      totalPrice,
+    })
+
+    const createdOrder = await order.save()
+
+    // Create a Stripe payment intent
+    // const paymentIntent = await stripe.paymentIntents.create({
+    //   amount: Math.round(totalPrice * 100),
+    //   currency: 'gbp',
+    //   metadata: { orderId: createdOrder._id.toString() },
+    // })
+
+    res.status(201).json({
+      order: createdOrder,
+      // paymentIntent: paymentIntent.client_secret,
+    })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+}
+*/

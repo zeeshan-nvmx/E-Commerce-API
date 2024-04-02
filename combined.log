@@ -37,3 +37,21 @@
 {"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:27:08.762Z"}
 {"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T07:33:06.804Z"}
 {"level":"info","message":"::1 - - [31/Mar/2024:07:33:12 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black&sizes=S,M HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T07:33:12.663Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-03-31T18:37:28.386Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:18:38:03 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e&colors=Black HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T18:38:03.794Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:18:40:53 +0000] \"GET /api/orders/63f96a9d7c6c2d3a5c7d5f8e HTTP/1.1\" 401 46 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T18:40:53.820Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:18:40:59 +0000] \"GET /api/orders/63f96a9d7c6c2d3a5c7d5f8e HTTP/1.1\" 404 78 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T18:40:59.775Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:18:41:12 +0000] \"GET /api/orders HTTP/1.1\" 200 2594 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T18:41:12.292Z"}
+{"level":"info","message":"::1 - - [31/Mar/2024:18:41:23 +0000] \"GET /api/orders/6605b541ffa6ae1f674afbd3 HTTP/1.1\" 200 1319 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-03-31T18:41:23.552Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-04-02T07:38:13.746Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:38:17 +0000] \"GET /api/products?search=shirt HTTP/1.1\" 200 1008 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:38:17.165Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:38:32 +0000] \"GET /api/products?search=pant HTTP/1.1\" 200 125 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:38:32.315Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:38:58 +0000] \"GET /api/products HTTP/1.1\" 500 96 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:38:58.142Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:39:04 +0000] \"GET /api/products?search=shirt HTTP/1.1\" 200 1008 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:39:04.706Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:39:07 +0000] \"GET /api/products HTTP/1.1\" 500 96 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:39:07.416Z"}
+{"level":"info","message":"Server running on port 4000","timestamp":"2024-04-02T07:40:40.104Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:40:45 +0000] \"GET /api/products HTTP/1.1\" 200 1543 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:40:45.056Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:40:49 +0000] \"GET /api/products?categories=66028f264cef3063f356dd8b,66028f424cef3063f356dd8e HTTP/1.1\" 200 1543 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:40:49.606Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:40:53 +0000] \"GET /api/products?colors=Black HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:40:53.490Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:41:01 +0000] \"GET /api/products?sizes=S,M HTTP/1.1\" 200 659 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:41:01.741Z"}
+{"level":"info","message":"::1 - - [02/Apr/2024:07:41:05 +0000] \"GET /api/products?search=shirt HTTP/1.1\" 200 1008 \"-\" \"PostmanRuntime/7.37.0\"","timestamp":"2024-04-02T07:41:05.888Z"}
