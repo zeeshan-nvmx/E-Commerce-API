@@ -8,7 +8,6 @@ const rateLimit = require('express-rate-limit')
 const morgan = require('morgan')
 
 dotenv.config()
-
 const app = express()
 
 // Configure morgan to log requests to the console
@@ -17,6 +16,9 @@ app.use(morgan('common'))
 // Security middlewares
 app.use(helmet())
 app.use(cors())
+
+// Trust the X-Forwarded-For header
+app.set('trust proxy', 1)
 
 // Rate limiting (to prevent brute-force attacks)
 const limiter = rateLimit({
