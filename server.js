@@ -12,7 +12,7 @@ dotenv.config()
 const app = express()
 
 // Configure morgan to log requests to the console
-app.use(morgan('combined'))
+app.use(morgan('common'))
 
 // Security middlewares
 app.use(helmet())
@@ -56,7 +56,6 @@ const PORT = process.env.PORT || 4000
 // Connect to the database and start the server
 connectDB()
   .then(() => {
-    console.log('Connected to the database')
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`)
     })
