@@ -1,4 +1,3 @@
-const winston = require('winston')
 
 // Enhance the errorHandler to log detailed error information
 const errorHandler = (err, req, res, next) => {
