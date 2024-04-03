@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken')
-const winston = require('winston') // Ensure winston is correctly imported
 
 const auth = (req, res, next) => {
   // Safely attempt to access the 'Authorization' header
   const authHeader = req.header('Authorization')
   if (!authHeader) {
-    winston.error('No Authorization header provided')
     return res.status(401).json({ message: 'No Authorization header provided' })
   }
 
@@ -14,7 +12,6 @@ const auth = (req, res, next) => {
   try {
     token = authHeader.replace('Bearer ', '')
   } catch (error) {
-    winston.error('Error processing the Authorization header:', error.message)
     return res.status(401).json({ message: 'Error processing the Authorization header' })
   }
 
@@ -27,7 +24,6 @@ const auth = (req, res, next) => {
 
     next()
   } catch (err) {
-    winston.error('Authentication error:', err.message)
     res.status(401).json({ message: 'Invalid token' })
   }
 }

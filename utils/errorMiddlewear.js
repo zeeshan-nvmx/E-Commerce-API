@@ -1,5 +1,3 @@
-
-// Enhance the errorHandler to log detailed error information
 const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode
   const message = err.message || 'Internal Server Error'
@@ -9,9 +7,6 @@ const errorHandler = (err, req, res, next) => {
 
   // Log the error to the console for development
   console.error(errorDetails)
-
-  // Use winston to log the error to files
-  winston.error(errorDetails)
 
   // Send the error response
   res.status(statusCode).json({
