@@ -206,12 +206,30 @@ const deleteProduct = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' })
     }
 
+    let imagesDeletedSuccessfully = true
+    const failedImageDeletions = []
+
+    // Delete images from Google Cloud Storage
     for (const imageUrl of product.images) {
-      await deleteFromGCS(imageUrl.split('/').pop())
+      try {
+        await deleteFromGCS(imageUrl.split('/').pop())
+      } catch (error) {
+        imagesDeletedSuccessfully = false
+        failedImageDeletions.push(imageUrl)
+      }
     }
 
-    await product.remove()
-    res.json({ message: 'Product deleted successfully' })
+    // Delete the product document
+    await Product.deleteOne({ _id: req.params.id })
+
+    if (imagesDeletedSuccessfully) {
+      res.json({ message: 'Product deleted successfully' })
+    } else {
+      res.json({
+        message: 'Product deleted successfully, but some images could not be deleted',
+        failedImageDeletions,
+      })
+    }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -224,16 +242,39 @@ const deleteProductImage = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' })
     }
 
-    const imageUrl = product.images.find((url) => url.split('/').pop() === req.params.imageId)
-    if (!imageUrl) {
+    const { imageUrl } = req.body
+    if (!product.images.includes(imageUrl)) {
       return res.status(404).json({ message: 'Image not found' })
     }
 
-    await deleteFromGCS(req.params.imageId)
+    await deleteFromGCS(imageUrl.split('/').pop())
     product.images = product.images.filter((url) => url !== imageUrl)
     await product.save()
 
     res.json({ message: 'Image deleted successfully' })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+}
+
+const addProductImage = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId)
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' })
+    }
+
+    const { imageUrl, imageFile } = req.body
+    if (!imageUrl || !imageFile) {
+      return res.status(400).json({ message: 'Image URL and file are required' })
+    }
+
+    const imageName = imageUrl.split('/').pop()
+    await uploadToGCS(imageName, imageFile)
+    product.images.push(imageUrl)
+    await product.save()
+
+    res.json({ message: 'Image added successfully' })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -246,4 +287,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   deleteProductImage,
+  addProductImage
 }
