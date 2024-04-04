@@ -31,8 +31,8 @@ const userSchema = new mongoose.Schema({
     enum: ['customer', 'admin', 'superadmin'],
     default: 'customer',
   },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
+  otp: String,
+  otpExpire: Date,
   addresses: [addressSchema],
 })
 
