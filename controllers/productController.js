@@ -447,31 +447,49 @@ const createProduct = async (req, res) => {
 }
 
 const updateProduct = async (req, res) => {
-  const schema = Joi.object({
-    name: Joi.string().trim().min(3).max(100),
-    description: Joi.string().trim().min(3).max(500),
-    price: Joi.number().min(0),
-    categories: Joi.items(Joi.string().trim()),
-    colors: Joi.array().items(
-      Joi.object({
-        name: Joi.string().trim(),
-        image: Joi.string().trim(),
-        sizes: Joi.array().items(
-          Joi.object({
-            name: Joi.string().trim(),
-            quantity: Joi.number().min(0),
-          })
-        ),
-      })
-    ),
-  }).options({ abortEarly: false })
+    const schema = Joi.object({
+      name: Joi.string().trim().min(3).max(100),
+      description: Joi.string().trim().min(3).max(500),
+      price: Joi.number().min(0),
+      categories: Joi.string().trim(),
+      colors: Joi.string().trim(),
+    }).options({ abortEarly: false })
 
-  const { error } = schema.validate(req.body, { abortEarly: false })
-  if (error) {
-    return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
-  }
+    const { error } = schema.validate(req.body, { abortEarly: false })
+    if (error) {
+      return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
+    }
 
-  const { name, description, price, categories, colors } = req.body
+    const { name, description, price, categories, colors } = req.body
+
+    // Parse the colors string into an array of objects
+    let parsedColors
+    try {
+      parsedColors = colors ? JSON.parse(colors) : undefined
+    } catch (err) {
+      return res.status(400).json({ message: 'Invalid colors data' })
+    }
+
+    // Validate the parsed colors array (if provided)
+    if (parsedColors) {
+      const colorsSchema = Joi.array().items(
+        Joi.object({
+          name: Joi.string().trim(),
+          image: Joi.string().trim(),
+          sizes: Joi.array().items(
+            Joi.object({
+              name: Joi.string().trim(),
+              quantity: Joi.number().min(0),
+            })
+          ),
+        })
+      )
+
+      const { error: colorsError } = colorsSchema.validate(parsedColors, { abortEarly: false })
+      if (colorsError) {
+        return res.status(400).json({ message: colorsError.details.map((err) => err.message).join(', ') })
+      }
+    }
 
   try {
     const product = await Product.findById(req.params.id)
@@ -591,36 +609,6 @@ const deleteProductImage = async (req, res) => {
   }
 }
 
-const addProductImage = async (req, res) => {
-  const schema = Joi.object({
-    imageUrl: Joi.string().trim().required(),
-    imageFile: Joi.string().trim().required(),
-  }).options({ abortEarly: false })
-
-  const { error } = schema.validate(req.body, { abortEarly: false })
-  if (error) {
-    return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
-  }
-
-  const { imageUrl, imageFile } = req.body
-
-  try {
-    const product = await Product.findById(req.params.productId)
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' })
-    }
-
-    const imageName = imageUrl.split('/').pop()
-    await uploadToGCS(imageName, imageFile)
-    product.images.push(imageUrl)
-    await product.save()
-
-    res.json({ message: 'Image added successfully' })
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
-}
-
 module.exports = {
   getProducts,
   getProductById,
@@ -628,5 +616,4 @@ module.exports = {
   updateProduct,
   deleteProduct,
   deleteProductImage,
-  addProductImage,
 }
