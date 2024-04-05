@@ -39,7 +39,7 @@ const createCategory = async (req, res) => {
     const category = await Category.create({ name, description, image: imageUrl })
     res.status(201).json({ messsage: "Category created successfully", data: category })
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'An error occured while creating the category, creation was unsuccessful', error: error.message })
   }
 }
 
@@ -66,7 +66,7 @@ const updateCategory = async (req, res) => {
     const updatedCategory = await category.save()
     res.json(updatedCategory)
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'An error occured while updating the category, update was unsuccessful', error: error.message })
   }
 }
 
@@ -84,7 +84,7 @@ const deleteCategory = async (req, res) => {
     await category.remove()
     res.json({ message: 'Category deleted successfully' })
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'An error occured while deleting the category, deletion was unsuccessful', error: error.message })
   }
 }
 

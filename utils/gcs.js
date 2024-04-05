@@ -10,8 +10,20 @@ const storage = new Storage({
 })
 
 const bucket = storage.bucket(process.env.GCP_BUCKET_NAME)
+const MAX_FILE_SIZE = 500 * 1024 // 500KB in bytes
 
 const uploadToGCS = async (file) => {
+  // Check if the file is an image
+  const isImage = file.mimetype.startsWith('image/')
+  if (!isImage) {
+    throw new Error('The uploaded files are not images, upload only images please')
+  }
+
+  // Check if the file size is within the limit
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`File size exceeds the limit of ${MAX_FILE_SIZE} bytes`)
+  }
+  
   try {
     const originalFilename = file.originalname.replace(/\s+/g, '_')
     const timestamp = Date.now()
@@ -53,4 +65,3 @@ const deleteFromGCS = async (fileName) => {
 }
 
 module.exports = { uploadToGCS, deleteFromGCS }
-
