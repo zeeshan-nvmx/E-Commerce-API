@@ -17,8 +17,8 @@ app.use(morgan('common'))
 app.use(helmet())
 app.use(cors())
 
-// Trust the X-Forwarded-For header
-app.set('trust proxy', 1)
+// // Trust the X-Forwarded-For header
+// app.set('trust proxy', 1)
 
 // Rate limiting (to prevent brute-force attacks)
 const limiter = rateLimit({
