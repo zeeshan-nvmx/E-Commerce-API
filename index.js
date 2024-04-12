@@ -10,15 +10,27 @@ const morgan = require('morgan')
 dotenv.config()
 const app = express()
 
+
+// app.use(cors())
+
+var corsOptions = {
+    origin: true,
+    credentials: true,
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Requested-With', 'X-Auth-Token'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+
 // Configure morgan to log requests to the console
 app.use(morgan('common'))
 
 // Security middlewares
 app.use(helmet())
-app.use(cors())
 
-// // Trust the X-Forwarded-For header
-// app.set('trust proxy', 1)
+
+// Trust the X-Forwarded-For header
+app.set('trust proxy', 1)
 
 // Rate limiting (to prevent brute-force attacks)
 const limiter = rateLimit({
