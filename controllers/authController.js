@@ -140,7 +140,7 @@ const forgotPassword = async (req, res) => {
         text: message,
       })
 
-      res.status(201).json({ message: 'A OTP sent to your email, please check you email.' })
+      res.status(201).json({ message: 'A OTP was sent to your email, please check you email.' })
     } catch (error) {
       user.otp = undefined
       user.otpExpire = undefined
@@ -238,9 +238,11 @@ const addAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     user.addresses.push(newAddress);
-    await user.save();
+    await user.save()
 
-    res.status(200).json({ message: 'Address added successfully', user });
+    const { password, ...passwordRemovedUser } = user.toObject();
+    res.status(200).json({ message: 'Address added successfully', user: passwordRemovedUser });
+
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong at server level', error: error.message });
   }
@@ -248,11 +250,8 @@ const addAddress = async (req, res) => {
 
 // Delete Address
 const deleteAddress = async (req, res) => {
-  const { error } = deleteAddressSchema.validate(req.body)
-  if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
-
-  const { addressId } = req.body;
+  const addressId  = req.params.id;
 
   try {
     const user = await User.findById(req.user.id);
@@ -276,9 +275,9 @@ const showMe = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-    const { password, iat, exp, ...userData } = decoded
+    const { _id, name, email, role, addresses } = decoded
 
-    res.json({ message: 'User data retrieved', data: userData })
+    res.json({ message: 'User data retrieved', data: { _id, name, email, role, addresses } })
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ message: 'Invalid token', error: error.message })
