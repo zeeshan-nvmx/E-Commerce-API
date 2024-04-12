@@ -10,9 +10,6 @@ const morgan = require('morgan')
 dotenv.config()
 const app = express()
 
-
-
-
 // var corsOptions = {
 //     origin: true,
 //     credentials: true,
