@@ -11,8 +11,10 @@ const errorHandler = (err, req, res, next) => {
   // Send the error response
   res.status(statusCode).json({
     message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    stack:  err.stack,
   })
 }
 
 module.exports = errorHandler
+
+// process.env.NODE_ENV === 'production' ? null :

@@ -9,19 +9,7 @@ const Joi = require('joi')
 const registerSchema = Joi.object({
   name: Joi.string().min(3).max(50).required(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  role: Joi.string().valid('customer', 'admin', 'superadmin').optional(),
-  addresses: Joi.array().items(
-    Joi.object({
-      name: Joi.string().min(3).max(50).required(),
-      line1: Joi.string().min(3).max(100).required(),
-      line2: Joi.string().min(3).max(100).optional(),
-      city: Joi.string().min(3).max(50).required(),
-      state: Joi.string().min(2).max(50).required(),
-      country: Joi.string().min(2).max(50).required(),
-      postal_code: Joi.string().min(3).max(20).required(),
-    })
-  ).optional(),
+  password: Joi.string().min(6).required()  
 }).options({ abortEarly: false });
 
 const loginSchema = Joi.object({
@@ -44,18 +32,8 @@ const resetPasswordSchema = Joi.object({
 
 const updateProfileSchema = Joi.object({
   name: Joi.string().min(3).max(50).optional(),
-  addresses: Joi.array().items(
-    Joi.object({
-      name: Joi.string().min(3).max(50).optional(),
-      line1: Joi.string().min(3).max(100).optional(),
-      line2: Joi.string().min(3).max(100).optional(),
-      city: Joi.string().min(3).max(50).optional(),
-      state: Joi.string().min(2).max(50).optional(),
-      country: Joi.string().min(2).max(50).optional(),
-      postal_code: Joi.string().min(3).max(20).optional(),
-    })
-  ).optional(),
-}).options({ abortEarly: false });
+  email: Joi.string().email().optional()
+}).options({ abortEarly: false })
 
 const addAddressSchema = Joi.object({
   name: Joi.string().min(3).max(50).required(),
@@ -75,7 +53,7 @@ const deleteAddressSchema = Joi.object({
 const register = async (req, res) => {
   const { error } = registerSchema.validate(req.body)
   if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
-  const { name, email, password, role, addresses } = req.body
+  const { name, email, password } = req.body
 
   try {
     const userExists = await User.findOne({ email })
@@ -84,15 +62,14 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists', error: 'User already exists' })
     }
 
-    const user = await User.create({ name, email, password, role, addresses })
+    const user = await User.create({ name, email, password })
 
     if (user) {
       const userData = {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
-        addresses: user.addresses,
+        role: user.role
       }
       const token = generateToken({ id: user._id, name: user.name, email: user.email, role: user.role })
       res.status(201).json({ message: 'User created successfully', data: { user: userData, token } })
@@ -234,19 +211,20 @@ const updateProfile = async (req, res) => {
  const { error } = updateProfileSchema.validate(req.body)
  if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
-  const { name, addresses } = req.body;
+  const { name, email } = req.body;
 
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
 
-    if (name) user.name = name;
-    if (addresses) user.addresses = addresses;
+    if (name) user.name = name
+  
+    if (email) user.email = email
 
-    await user.save();
+    await user.save()
 
-    res.status(200).json({ message: 'Profile updated successfully', user });
+    res.status(200).json({ message: 'Profile updated successfully', user })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message });
+    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 };
 
@@ -258,7 +236,7 @@ const addAddress = async (req, res) => {
   const newAddress = req.body;
 
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     user.addresses.push(newAddress);
     await user.save();
 
@@ -277,7 +255,7 @@ const deleteAddress = async (req, res) => {
   const { addressId } = req.body;
 
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     user.addresses = user.addresses.filter((address) => address._id.toString() !== addressId);
     await user.save();
 
