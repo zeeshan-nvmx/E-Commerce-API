@@ -9,30 +9,30 @@ const Joi = require('joi')
 const registerSchema = Joi.object({
   name: Joi.string().min(3).max(50).required(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).required()  
-}).options({ abortEarly: false });
+  password: Joi.string().min(6).required(),
+}).options({ abortEarly: false })
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-}).options({ abortEarly: false });
+}).options({ abortEarly: false })
 
 const forgotPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
-}).options({ abortEarly: false });
+}).options({ abortEarly: false })
 
 const verifyOTPSchema = Joi.object({
   otp: Joi.string().length(4).required(),
-}).options({ abortEarly: false });
+}).options({ abortEarly: false })
 
 const resetPasswordSchema = Joi.object({
   newPassword: Joi.string().min(6).required(),
   otp: Joi.string().length(4).required(),
-}).options({ abortEarly: false });
+}).options({ abortEarly: false })
 
 const updateProfileSchema = Joi.object({
   name: Joi.string().min(3).max(50).optional(),
-  email: Joi.string().email().optional()
+  email: Joi.string().email().optional(),
 }).options({ abortEarly: false })
 
 const addAddressSchema = Joi.object({
@@ -43,12 +43,11 @@ const addAddressSchema = Joi.object({
   state: Joi.string().min(2).max(50).required(),
   country: Joi.string().min(2).max(50).required(),
   postal_code: Joi.string().min(3).max(20).required(),
-}).options({ abortEarly: false });
+}).options({ abortEarly: false })
 
 const deleteAddressSchema = Joi.object({
   addressId: Joi.string().required(),
-}).options({ abortEarly: false });
-
+}).options({ abortEarly: false })
 
 const register = async (req, res) => {
   const { error } = registerSchema.validate(req.body)
@@ -69,20 +68,19 @@ const register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
       }
       const token = generateToken({ id: user._id, name: user.name, email: user.email, role: user.role })
-      res.status(201).json({ message: 'User created successfully', data: { user: userData, token } })
+      return res.status(201).json({ message: 'User created successfully', data: { user: userData, token } })
     } else {
-      res.status(400).json({ message: 'Invalid user data', error: 'Invalid user data' })
+      return res.status(400).json({ message: 'Invalid user data', error: 'Invalid user data' })
     }
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 }
 
 const login = async (req, res) => {
-
   const { error } = loginSchema.validate(req.body)
   if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
@@ -95,20 +93,19 @@ const login = async (req, res) => {
       const { _id, name, email, role, addresses } = user
       const tokenUser = { _id, name, email, role, addresses }
       const token = generateToken(tokenUser)
-      res.json({ message: 'User authenticated', data: { tokenUser, token } })
+      return res.json({ message: 'User authenticated', data: { tokenUser, token } })
     } else {
-      res.status(401).json({ message: 'Invalid email or password', error: 'Invalid email or password' })
+      return res.status(401).json({ message: 'Invalid email or password', error: 'Invalid email or password' })
     }
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 }
 
 const forgotPassword = async (req, res) => {
+  const { error } = forgotPasswordSchema.validate(req.body)
+  if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
-   const { error } = forgotPasswordSchema.validate(req.body)
-   if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
-  
   const { email } = req.body
 
   try {
@@ -140,7 +137,7 @@ const forgotPassword = async (req, res) => {
         text: message,
       })
 
-      res.status(201).json({ message: 'A OTP was sent to your email, please check you email.' })
+      return res.status(201).json({ message: 'A OTP was sent to your email, please check you email.' })
     } catch (error) {
       user.otp = undefined
       user.otpExpire = undefined
@@ -150,12 +147,11 @@ const forgotPassword = async (req, res) => {
       return res.status(500).json({ message: 'Email could not be sent', error: error.message })
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
+    return res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
 
 const verifyOTP = async (req, res) => {
-
   const { error } = verifyOTPSchema.validate(req.body)
   if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
@@ -171,14 +167,13 @@ const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP', error: 'Invalid or expired OTP' })
     }
 
-    res.status(200).json({ message: 'OTP verified successfully, now you can reset your password' })
+    return res.status(200).json({ message: 'OTP verified successfully, now you can reset your password' })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 }
 
 const resetPassword = async (req, res) => {
-
   const { error } = resetPasswordSchema.validate(req.body)
   if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
@@ -200,70 +195,67 @@ const resetPassword = async (req, res) => {
 
     await user.save()
 
-    res.status(200).json({ message: 'Password updated successfully' })
+    return res.status(200).json({ message: 'Password updated successfully' })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
 }
 
 // Update User Profile
 const updateProfile = async (req, res) => {
- const { error } = updateProfileSchema.validate(req.body)
- if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
+  const { error } = updateProfileSchema.validate(req.body)
+  if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
-  const { name, email } = req.body;
+  const { name, email } = req.body
 
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id)
 
     if (name) user.name = name
-  
+
     if (email) user.email = email
 
     await user.save()
 
-    res.status(200).json({ message: 'Profile updated successfully', user })
+    return res.status(200).json({ message: 'Profile updated successfully', user })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
-};
+}
 
 // Add Address
 const addAddress = async (req, res) => {
   const { error } = addAddressSchema.validate(req.body)
   if (error) return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
 
-  const newAddress = req.body;
+  const newAddress = req.body
 
   try {
-    const user = await User.findById(req.user.id);
-    user.addresses.push(newAddress);
+    const user = await User.findById(req.user.id)
+    user.addresses.push(newAddress)
     await user.save()
 
-    const { password, ...passwordRemovedUser } = user.toObject();
-    res.status(200).json({ message: 'Address added successfully', user: passwordRemovedUser });
-
+    const { password, ...passwordRemovedUser } = user.toObject()
+    return res.status(200).json({ message: 'Address added successfully', user: passwordRemovedUser })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message });
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
-};
+}
 
 // Delete Address
 const deleteAddress = async (req, res) => {
-
-  const addressId  = req.params.id;
+  const addressId = req.params.id
 
   try {
-    const user = await User.findById(req.user.id);
-    user.addresses = user.addresses.filter((address) => address._id.toString() !== addressId);
-    await user.save();
+    const user = await User.findById(req.user.id)
+    user.addresses = user.addresses.filter((address) => address._id.toString() !== addressId)
+    await user.save()
 
-    res.status(200).json({ message: 'Address deleted successfully', user });
+    return res.status(200).json({ message: 'Address deleted successfully', user })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong at server level', error: error.message });
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
-};
-
+}
 
 const showMe = async (req, res) => {
   try {
@@ -277,16 +269,11 @@ const showMe = async (req, res) => {
 
     const { _id, name, email, role, addresses } = decoded
 
-    res.json({ message: 'User data retrieved', data: { _id, name, email, role, addresses } })
+    return res.json({ message: 'User data retrieved', data: { _id, name, email, role, addresses } })
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: 'Invalid token', error: error.message })
-    }
-    res.status(500).json({ message: 'Server error', error: error.message })
+    return res.status(401).json({ message: 'Invalid token', error: error.message })
   }
 }
-
-
 
 module.exports = {
   register,
