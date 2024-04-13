@@ -11,6 +11,7 @@ const {
   updateProfile,
   addAddress,
   deleteAddress,
+  getUser
 } = require('../controllers/authController')
 
 router.route('/register').post(register)
@@ -19,6 +20,7 @@ router.route('/forgot-password').post(forgotPassword)
 router.route('/verify-otp').post(verifyOTP)
 router.route('/reset-password').post(resetPassword)
 router.route('/showme').get(showMe)
+router.route('/getuser').get(auth, getUser);
 
 // Route for updating user profile
 router.route('/updateprofile').put(auth, updateProfile);

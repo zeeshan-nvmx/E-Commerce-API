@@ -4,6 +4,7 @@ const sendEmail = require('../utils/sendEmail')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 const Joi = require('joi')
+const { get } = require('http')
 
 // Validation schemas
 const registerSchema = Joi.object({
@@ -262,6 +263,17 @@ const deleteAddress = async (req, res) => {
   }
 }
 
+const getUser = async (req, res) => { 
+
+  try {
+    const user = await User.findById(req.user.id).select('-password -otp -otpExpire')
+    return res.status(200).json({ message: 'User data retrieved', data: user })
+  } catch (error) {
+    return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
+  }
+
+}
+
 const showMe = async (req, res) => {
   try {
     const authHeader = req.headers.authorization
@@ -290,4 +302,5 @@ module.exports = {
   updateProfile,
   addAddress,
   deleteAddress,
+  getUser
 }
