@@ -217,7 +217,10 @@ const updateProfile = async (req, res) => {
 
     await user.save()
 
-    return res.status(200).json({ message: 'Profile updated successfully', user })
+    const { password, otp, otpExpire, ...userWithoutSensitiveData } = user.toObject()
+
+    return res.status(200).json({ message: 'Profile updated successfully', user: userWithoutSensitiveData })
+
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
