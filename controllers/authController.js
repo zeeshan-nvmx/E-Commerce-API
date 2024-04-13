@@ -219,7 +219,7 @@ const updateProfile = async (req, res) => {
 
     const { password, otp, otpExpire, ...userWithoutSensitiveData } = user.toObject()
 
-    return res.status(200).json({ message: 'Profile updated successfully', user: userWithoutSensitiveData })
+    return res.status(200).json({ message: 'Profile updated successfully', data: userWithoutSensitiveData })
 
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
@@ -238,8 +238,8 @@ const addAddress = async (req, res) => {
     user.addresses.push(newAddress)
     await user.save()
 
-    const { password, ...passwordRemovedUser } = user.toObject()
-    return res.status(200).json({ message: 'Address added successfully', user: passwordRemovedUser })
+    const { password, otp, otpExpire, ...userWithoutSensitiveData } = user.toObject()
+    return res.status(200).json({ message: 'Address added successfully', data: userWithoutSensitiveData })
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
@@ -254,7 +254,9 @@ const deleteAddress = async (req, res) => {
     user.addresses = user.addresses.filter((address) => address._id.toString() !== addressId)
     await user.save()
 
-    return res.status(200).json({ message: 'Address deleted successfully', user })
+    const { password, otp, otpExpire, ...userWithoutSensitiveData } = user.toObject()
+    return res.status(200).json({ message: 'Address deleted successfully', data: userWithoutSensitiveData })
+
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong at server level', error: error.message })
   }
