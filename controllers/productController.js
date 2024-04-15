@@ -326,6 +326,7 @@ const getProducts = async (req, res) => {
         products,
         totalPages: Math.ceil(totalProducts / limit),
         currentPage: page,
+        totalProducts
       },
       message: `Products successfully fetched, Showing page ${page} of ${Math.ceil(totalProducts / limit)} pages.`,
     }
