@@ -147,7 +147,8 @@ const createOrder = async (req, res) => {
           throw new Error(`Insufficient quantity for size ${item.size} of product ${product.name}`)
         }
         return {
-          productName: product.name, // Use product name instead of ID
+          productId: item.productId, // Keeping the original productId
+          productName: product.name, // Adding productName
           color: item.color,
           size: item.size,
           quantity: item.quantity,
@@ -230,7 +231,6 @@ const createOrder = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
-
 
 const handlePaymentSuccess = async (paymentIntent) => {
   try {
