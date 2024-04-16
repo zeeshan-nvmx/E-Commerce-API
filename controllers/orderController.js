@@ -147,8 +147,8 @@ const createOrder = async (req, res) => {
           throw new Error(`Insufficient quantity for size ${item.size} of product ${product.name}`)
         }
         return {
-          productId: item.productId, // Keeping the original productId
-          productName: product.name, // Adding productName
+          productId: item.productId,
+          productName: product.name,
           color: item.color,
           size: item.size,
           quantity: item.quantity,
@@ -178,14 +178,8 @@ const createOrder = async (req, res) => {
 
     // Send detailed email to the customer
     const user = await User.findById(req.user.id)
-    const orderItemsHtml = orderItems.map(
-      (item) => `<tr><td>${item.quantity}</td><td>${item.color}</td><td>${item.size}</td><td>${item.productName}</td><td>$${item.price}</td></tr>`
-    )
-    const message = `
-      <h1>Order Confirmation</h1>
-      <p>Dear ${user.name},</p>
-      <p>Thank you for your order! Here are the details:</p>
-      <table>
+    const orderItemsHtml = `
+      <table border="1" cellpadding="5" cellspacing="0">
         <thead>
           <tr>
             <th>Quantity</th>
@@ -196,15 +190,22 @@ const createOrder = async (req, res) => {
           </tr>
         </thead>
         <tbody>
-          ${orderItemsHtml.join('')}
+          ${orderItems
+            .map(
+              (item) =>
+                `<tr><td>${item.quantity}</td><td>${item.color}</td><td>${item.size}</td><td>${item.productName}</td><td>$${item.price}</td></tr>`
+            )
+            .join('')}
         </tbody>
       </table>
-      <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${
-      shippingAddress.state
-    }, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
-      <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${
-      billingAddress.state
-    }, ${billingAddress.country}, ${billingAddress.postal_code}</p>
+    `
+    const message = `
+      <h1>Order Confirmation</h1>
+      <p>Dear ${user.name},</p>
+      <p>Thank you for your order! Here are the details:</p>
+      ${orderItemsHtml}
+      <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${shippingAddress.state}, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
+      <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${billingAddress.state}, ${billingAddress.country}, ${billingAddress.postal_code}</p>
       <p>Payment Method: ${paymentMethod}</p>
       <p>Items Total: $${formattedItemsPrice}</p>
       <p>Shipping: $${shippingPrice}</p>
@@ -231,6 +232,7 @@ const createOrder = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
 
 const handlePaymentSuccess = async (paymentIntent) => {
   try {
