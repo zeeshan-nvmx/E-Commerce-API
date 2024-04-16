@@ -179,40 +179,40 @@ const createOrder = async (req, res) => {
     // Send detailed email to the customer
     const user = await User.findById(req.user.id)
     const orderItemsHtml = `
-      <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-          <tr>
-            <th>Quantity</th>
-            <th>Color</th>
-            <th>Size</th>
-            <th>Product</th>
-            <th>Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${orderItems
-            .map(
-              (item) =>
-                `<tr><td>${item.quantity}</td><td>${item.color}</td><td>${item.size}</td><td>${item.productName}</td><td>$${item.price}</td></tr>`
-            )
-            .join('')}
-        </tbody>
-      </table>
-    `
+  <table style="border-collapse: collapse; width: 100%;">
+    <thead>
+      <tr style="background-color: #f2f2f2;">
+        <th style="border: 1px solid #ddd; padding: 8px;">Quantity</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Color</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Size</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Product</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${orderItems
+        .map(
+          (item) =>
+            `<tr><td style="border: 1px solid #ddd; padding: 8px;">${item.quantity}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.color}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.size}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td><td style="border: 1px solid #ddd; padding: 8px;">$${item.price}</td></tr>`
+        )
+        .join('')}
+    </tbody>
+  </table>
+`
     const message = `
-      <h1>Order Confirmation</h1>
-      <p>Dear ${user.name},</p>
-      <p>Thank you for your order! Here are the details:</p>
-      ${orderItemsHtml}
-      <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${shippingAddress.state}, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
-      <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${billingAddress.state}, ${billingAddress.country}, ${billingAddress.postal_code}</p>
-      <p>Payment Method: ${paymentMethod}</p>
-      <p>Items Total: $${formattedItemsPrice}</p>
-      <p>Shipping: $${shippingPrice}</p>
-      <p>Tax: $${taxPrice}</p>
-      <p>Total: $${totalPrice}</p>
-      <p>Your order will be shipped shortly. Thank you for shopping with us!</p>
-    `
+  <h1>Order Confirmation</h1>
+  <p>Dear ${user.name},</p>
+  <p>Thank you for your order! Here are the details:</p>
+  ${orderItemsHtml}
+  <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${shippingAddress.state}, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
+  <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${billingAddress.state}, ${billingAddress.country}, ${billingAddress.postal_code}</p>
+  <p>Payment Method: ${paymentMethod}</p>
+  <p>Items Total: $${formattedItemsPrice}</p>
+  <p>Shipping: $${shippingPrice}</p>
+  <p>Tax: $${taxPrice}</p>
+  <p>Total: $${totalPrice}</p>
+  <p>Your order will be shipped shortly. Thank you for shopping with us!</p>
+`
 
     try {
       await sendEmail({
@@ -225,7 +225,7 @@ const createOrder = async (req, res) => {
     }
 
     res.status(201).json({
-      message: 'Order placed successfully',
+      message: 'Order placed successfully, a email was sent to your registered email address with the order details.',
       data: createdOrder,
     })
   } catch (error) {
