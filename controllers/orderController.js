@@ -47,6 +47,7 @@ const getShippingRates = async (req, res) => {
   }
 }
 
+/*
 const createOrder = async (req, res) => {
   const { shippingAddress, billingAddress, paymentMethod, cartItems } = req.body
 
@@ -114,6 +115,97 @@ const createOrder = async (req, res) => {
     // })
 
     res.status(201).json({ message: 'Order placed successfully', data: createdOrder, // paymentIntent: paymentIntent.client_secret,
+    })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+}
+*/
+
+const createOrder = async (req, res) => {
+  const { shippingAddress, billingAddress, paymentMethod, cartItems } = req.body
+
+  try {
+    if (!cartItems || cartItems.length === 0) {
+      return res.status(400).json({ message: 'Cart is empty' })
+    }
+
+    const orderItems = await Promise.all(
+      cartItems.map(async (item) => {
+        const product = await Product.findById(item.productId)
+        if (!product) {
+          throw new Error(`Product with ID ${item.productId} not found`)
+        }
+        const color = product.colors.find((c) => c.name === item.color)
+        if (!color) {
+          throw new Error(`Color ${item.color} not found for product ${product.name}`)
+        }
+        const size = color.sizes.find((s) => s.name === item.size)
+        if (!size || size.quantity < item.quantity) {
+          throw new Error(`Insufficient quantity for size ${item.size} of product ${product.name}`)
+        }
+        return {
+          productId: item.productId,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity,
+          price: parseFloat(product.price.toFixed(2)), // Ensure price is formatted correctly
+        }
+      })
+    )
+
+    const shippingPrice = parseFloat((5).toFixed(2)) // Temporary shipping price
+    const itemsPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0)
+    const formattedItemsPrice = parseFloat(itemsPrice.toFixed(2))
+    const taxPrice = parseFloat((0.1 * formattedItemsPrice).toFixed(2)) // 10% tax
+    const totalPrice = parseFloat((formattedItemsPrice + shippingPrice + taxPrice).toFixed(2))
+
+    const order = new Order({
+      userId: req.user.id,
+      items: orderItems,
+      shippingAddress,
+      billingAddress,
+      paymentMethod,
+      taxPrice,
+      shippingPrice,
+      totalPrice,
+    })
+
+    const createdOrder = await order.save()
+
+    // Send detailed email to the customer
+    const user = await User.findById(req.user.id)
+    const orderItemsHtml = orderItems.map((item) => `<li>${item.quantity} x ${item.color} ${item.size} ${item.productId} - $${item.price}</li>`)
+    const message = `
+      <h1>Order Confirmation</h1>
+      <p>Dear ${user.name},</p>
+      <p>Thank you for your order! Here are the details:</p>
+      <ul>
+        ${orderItemsHtml.join('')}
+      </ul>
+      <p>Shipping Address: ${shippingAddress.address}, ${shippingAddress.city}, ${shippingAddress.postalCode}, ${shippingAddress.country}</p>
+      <p>Billing Address: ${billingAddress.address}, ${billingAddress.city}, ${billingAddress.postalCode}, ${billingAddress.country}</p>
+      <p>Payment Method: ${paymentMethod}</p>
+      <p>Items Total: $${formattedItemsPrice}</p>
+      <p>Shipping: $${shippingPrice}</p>
+      <p>Tax: $${taxPrice}</p>
+      <p>Total: $${totalPrice}</p>
+      <p>Your order will be shipped shortly. Thank you for shopping with us!</p>
+    `
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Order Confirmation',
+        text: message,
+      })
+    } catch (error) {
+      console.error('Error sending order confirmation email:', error.message)
+    }
+
+    res.status(201).json({
+      message: 'Order placed successfully',
+      data: createdOrder,
     })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
