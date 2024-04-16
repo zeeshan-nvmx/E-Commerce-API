@@ -123,6 +123,7 @@ const createOrder = async (req, res) => {
 }
 */
 
+
 const createOrder = async (req, res) => {
   const { shippingAddress, billingAddress, paymentMethod, cartItems } = req.body
 
@@ -146,19 +147,19 @@ const createOrder = async (req, res) => {
           throw new Error(`Insufficient quantity for size ${item.size} of product ${product.name}`)
         }
         return {
-          productId: item.productId,
+          productName: product.name, // Use product name instead of ID
           color: item.color,
           size: item.size,
           quantity: item.quantity,
-          price: parseFloat(product.price.toFixed(2)), // Ensure price is formatted correctly
+          price: parseFloat(product.price.toFixed(2)),
         }
       })
     )
 
-    const shippingPrice = parseFloat((5).toFixed(2)) // Temporary shipping price
+    const shippingPrice = parseFloat((5).toFixed(2))
     const itemsPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0)
     const formattedItemsPrice = parseFloat(itemsPrice.toFixed(2))
-    const taxPrice = parseFloat((0.1 * formattedItemsPrice).toFixed(2)) // 10% tax
+    const taxPrice = parseFloat((0.1 * formattedItemsPrice).toFixed(2))
     const totalPrice = parseFloat((formattedItemsPrice + shippingPrice + taxPrice).toFixed(2))
 
     const order = new Order({
@@ -176,16 +177,33 @@ const createOrder = async (req, res) => {
 
     // Send detailed email to the customer
     const user = await User.findById(req.user.id)
-    const orderItemsHtml = orderItems.map((item) => `<li>${item.quantity} x ${item.color} ${item.size} ${item.productId} - $${item.price}</li>`)
+    const orderItemsHtml = orderItems.map(
+      (item) => `<tr><td>${item.quantity}</td><td>${item.color}</td><td>${item.size}</td><td>${item.productName}</td><td>$${item.price}</td></tr>`
+    )
     const message = `
       <h1>Order Confirmation</h1>
       <p>Dear ${user.name},</p>
       <p>Thank you for your order! Here are the details:</p>
-      <ul>
-        ${orderItemsHtml.join('')}
-      </ul>
-      <p>Shipping Address: ${shippingAddress.address}, ${shippingAddress.city}, ${shippingAddress.postalCode}, ${shippingAddress.country}</p>
-      <p>Billing Address: ${billingAddress.address}, ${billingAddress.city}, ${billingAddress.postalCode}, ${billingAddress.country}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Quantity</th>
+            <th>Color</th>
+            <th>Size</th>
+            <th>Product</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orderItemsHtml.join('')}
+        </tbody>
+      </table>
+      <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${
+      shippingAddress.state
+    }, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
+      <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${
+      billingAddress.state
+    }, ${billingAddress.country}, ${billingAddress.postal_code}</p>
       <p>Payment Method: ${paymentMethod}</p>
       <p>Items Total: $${formattedItemsPrice}</p>
       <p>Shipping: $${shippingPrice}</p>
@@ -212,7 +230,6 @@ const createOrder = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
-
 
 
 const handlePaymentSuccess = async (paymentIntent) => {
