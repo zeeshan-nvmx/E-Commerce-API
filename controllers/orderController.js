@@ -3,6 +3,7 @@ const Product = require('../models/Product')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const royalMailAPI = require('../utils/royalMailAPI')
 const sendEmail = require('../utils/sendEmail')
+const User = require('../models/User')
 
 const getOrders = async (req, res) => {
   try {
