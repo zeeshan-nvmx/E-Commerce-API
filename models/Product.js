@@ -56,7 +56,7 @@ const productSchema = new mongoose.Schema({
   colors: [colorSchema],
 })
 
-productSchema.index({ name: 'text', description: 'text' })
+productSchema.index({ name: 'text', description: 'text', sku: 'text'})
 
 const Product = mongoose.model('Product', productSchema)
 
