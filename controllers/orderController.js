@@ -48,80 +48,6 @@ const getShippingRates = async (req, res) => {
   }
 }
 
-/*
-const createOrder = async (req, res) => {
-  const { shippingAddress, billingAddress, paymentMethod, cartItems } = req.body
-
-  try {
-    if (!cartItems || cartItems.length === 0) {
-      return res.status(400).json({ message: 'Cart is empty' })
-    }
-
-    const orderItems = await Promise.all(
-      cartItems.map(async (item) => {
-        const product = await Product.findById(item.productId)
-        if (!product) {
-          throw new Error(`Product with ID ${item.productId} not found`)
-        }
-
-        const color = product.colors.find((c) => c.name === item.color)
-        if (!color) {
-          throw new Error(`Color ${item.color} not found for product ${product.name}`)
-        }
-
-        const size = color.sizes.find((s) => s.name === item.size)
-        if (!size || size.quantity < item.quantity) {
-          throw new Error(`Insufficient quantity for size ${item.size} of product ${product.name}`)
-        }
-
-        return {
-          productId: item.productId,
-          color: item.color,
-          size: item.size,
-          quantity: item.quantity,
-          price: parseFloat(product.price.toFixed(2)), // Ensure price is formatted correctly
-        }
-      })
-    )
-
-    // const shippingRates = await royalMailAPI.getShippingRates(shippingAddress)
-    // const shippingPrice = shippingRates.rates[0].value
-
-    const shippingPrice = parseFloat((5).toFixed(2)) // Temporary shipping price
-
-    const itemsPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    const formattedItemsPrice = parseFloat(itemsPrice.toFixed(2)) 
-
-    const taxPrice = parseFloat((0.1 * formattedItemsPrice).toFixed(2)) // 10% tax
-    const totalPrice = parseFloat((formattedItemsPrice + shippingPrice + taxPrice).toFixed(2)) 
-
-    const order = new Order({
-      userId: req.user.id,
-      items: orderItems,
-      shippingAddress,
-      billingAddress,
-      paymentMethod,
-      taxPrice,
-      shippingPrice,
-      totalPrice,
-    })
-
-    const createdOrder = await order.save()
-
-    // Create a Stripe payment intent
-    // const paymentIntent = await stripe.paymentIntents.create({
-    //   amount: Math.round(totalPrice * 100),
-    //   currency: 'gbp',
-    //   metadata: { orderId: createdOrder._id.toString() },
-    // })
-
-    res.status(201).json({ message: 'Order placed successfully', data: createdOrder, // paymentIntent: paymentIntent.client_secret,
-    })
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
-}
-*/
 
 const createOrder = async (req, res) => {
   const { shippingAddress, billingAddress, paymentMethod, cartItems } = req.body
@@ -155,6 +81,9 @@ const createOrder = async (req, res) => {
         }
       })
     )
+
+    // const shippingRates = await royalMailAPI.getShippingRates(shippingAddress)
+    // const shippingPrice = shippingRates.rates[0].value
 
     const shippingPrice = parseFloat((5).toFixed(2))
     const itemsPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0)
@@ -290,7 +219,7 @@ const handlePaymentSuccess = async (paymentIntent) => {
   }
 }
 
-// Set up a webhook to handle Stripe payment success events
+// webhook to handle Stripe payment success events
 const stripe_webhook = async (req, res) => {
   const signature = req.headers['stripe-signature']
   let event
@@ -330,6 +259,89 @@ const updateOrderToDelivered = async (req, res) => {
   }
 }
 
+const getOrderStats = async (req, res) => {
+  try {
+    const { startDate, endDate, startMonth, endMonth, month, year } = req.query
+
+    let matchQuery = {}
+
+    if (startDate && endDate) {
+      matchQuery.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) }
+    } else if (startMonth && endMonth) {
+      const startMonthDate = new Date(startMonth)
+      const endMonthDate = new Date(endMonth)
+      endMonthDate.setMonth(endMonthDate.getMonth() + 1)
+      matchQuery.createdAt = { $gte: startMonthDate, $lt: endMonthDate }
+    } else if (month && year) {
+      const startOfMonth = new Date(year, month - 1, 1)
+      const endOfMonth = new Date(year, month, 0)
+      matchQuery.createdAt = { $gte: startOfMonth, $lte: endOfMonth }
+    } else {
+      const currentDate = new Date()
+      const currentMonth = currentDate.getMonth()
+      const currentYear = currentDate.getFullYear()
+      const startOfMonth = new Date(currentYear, currentMonth, 1)
+      const endOfMonth = new Date(currentYear, currentMonth + 1, 0)
+      matchQuery.createdAt = { $gte: startOfMonth, $lte: endOfMonth }
+    }
+
+    const stats = await Order.aggregate([
+      {
+        $match: matchQuery,
+      },
+      {
+        $facet: {
+          totalOrders: [{ $count: 'count' }],
+          totalSalesAmount: [
+            {
+              $group: {
+                _id: null,
+                totalAmount: { $sum: '$totalPrice' },
+              },
+            },
+          ],
+          totalConfirmedDeliveredOrders: [
+            {
+              $match: { isDelivered: true },
+            },
+            { $count: 'count' },
+          ],
+          totalPaymentConfirmedOrders: [
+            {
+              $match: { isPaid: true },
+            },
+            { $count: 'count' },
+          ],
+          shippingPendingOrders: [
+            {
+              $match: { isPaid: true, isDelivered: false },
+            },
+            {
+              $lookup: {
+                from: 'products',
+                localField: 'items.productId',
+                foreignField: '_id',
+                as: 'items.productId',
+              },
+            },
+          ],
+        },
+      },
+    ])
+
+    res.json({
+      totalOrders: stats[0].totalOrders[0]?.count || 0,
+      totalSalesAmount: stats[0].totalSalesAmount[0]?.totalAmount || 0,
+      totalConfirmedDeliveredOrders: stats[0].totalConfirmedDeliveredOrders[0]?.count || 0,
+      totalPaymentConfirmedOrders: stats[0].totalPaymentConfirmedOrders[0]?.count || 0,
+      shippingPendingOrders: stats[0].shippingPendingOrders,
+    })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+}
+
+
 module.exports = {
   getOrders,
   getOrderById,
@@ -337,4 +349,5 @@ module.exports = {
   createOrder,
   stripe_webhook,
   updateOrderToDelivered,
+  getOrderStats
 }
