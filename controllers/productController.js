@@ -262,7 +262,7 @@ const updateProduct = async (req, res) => {
     }
 
     const updatedProduct = await product.save()
-    res.status(200).json(updatedProduct)
+    res.status(200).json({ data: updatedProduct, message: 'Product updated successfully'})
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
