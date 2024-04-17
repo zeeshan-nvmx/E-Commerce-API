@@ -8,10 +8,10 @@ const User = require('../models/User')
 const getOrders = async (req, res) => {
   try {
     let orders
-    if (req.user.role === 'user') {
-      orders = await Order.find({ userId: req.user.id }).populate('items.productId')
+    if (req.user.role === 'customer') {
+      orders = await Order.find({ userId: req.user.id }).populate('items.productId').sort({ createdAt: -1 })
     } else {
-      orders = await Order.find().populate('items.productId')
+      orders = await Order.find().populate('items.productId').sort({ createdAt: -1 })
     }
 
     res.json({ message: 'Orders fetched successfully', data: orders })
