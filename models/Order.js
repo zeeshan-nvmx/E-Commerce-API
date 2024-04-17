@@ -88,6 +88,7 @@ const orderSchema = new mongoose.Schema({
     trackingNumber: String,
     carrier: String,
     estimatedDeliveryDate: Date,
+    labelUrl: String
   },
   createdAt: {
     type: Date,

@@ -5,18 +5,67 @@ const royalMailAPI = require('../utils/royalMailAPI')
 const sendEmail = require('../utils/sendEmail')
 const User = require('../models/User')
 
+// const getOrders = async (req, res) => {
+//   try {
+//     let orders
+//     if (req.user.role === 'customer') {
+//       orders = await Order.find({ userId: req.user.id }).populate('items.productId').sort({ createdAt: -1 })
+//     } else {
+//       orders = await Order.find().populate('items.productId').sort({ createdAt: -1 })
+//     }
+
+//     res.json({ message: 'Orders fetched successfully', data: orders })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Something went wrong while fetching orders', error: error.message })
+//   }
+// }
+
 const getOrders = async (req, res) => {
   try {
-    let orders
+    const { page = 1, limit = 10, startDate, endDate, startMonth, endMonth } = req.query
+
+    const query = {}
+
     if (req.user.role === 'customer') {
-      orders = await Order.find({ userId: req.user.id }).populate('items.productId').sort({ createdAt: -1 })
-    } else {
-      orders = await Order.find().populate('items.productId').sort({ createdAt: -1 })
+      query.userId = req.user.id
     }
 
-    res.json({ message: 'Orders fetched successfully', data: orders })
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      }
+    }
+
+    if (startMonth && endMonth) {
+      const startMonthDate = new Date(startMonth)
+      const endMonthDate = new Date(endMonth)
+      endMonthDate.setMonth(endMonthDate.getMonth() + 1)
+      query.createdAt = {
+        $gte: startMonthDate,
+        $lt: endMonthDate,
+      }
+    }
+
+    const totalOrders = await Order.countDocuments(query)
+    const orders = await Order.find(query)
+      .populate('items.productId')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+
+    res.json({
+      message: 'Orders fetched successfully',
+      data: orders,
+      totalOrders,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalOrders / limit),
+    })
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong while fetching orders', error: error.message })
+    res.status(500).json({
+      message: 'Something went wrong while fetching orders',
+      error: error.message,
+    })
   }
 }
 
@@ -39,13 +88,15 @@ const getOrderById = async (req, res) => {
 }
 
 const getShippingRates = async (req, res) => {
-  try {
-    const shippingAddress = req.body.shippingAddress
-    const shippingRates = await royalMailAPI.getShippingRates(shippingAddress)
-    res.json(shippingRates)
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message })
-  }
+  // try {
+  //   const shippingAddress = req.body.shippingAddress
+  //   const shippingRates = await royalMailAPI.getShippingRates(shippingAddress)
+  //   res.json({ data: shippingRates, message: 'Shipping rates fetched successfully'})
+  // } catch (error) {
+  //   res.status(500).json({ message: 'Server error', error: error.message })
+  // }
+  const shippingRates = 5
+  res.status(200).json({data: shippingRates, message: 'Shipping rate fetched successfully'})
 }
 
 
@@ -153,7 +204,7 @@ const createOrder = async (req, res) => {
     }
 
     res.status(201).json({
-      message: 'Order placed successfully, a email was sent to your registe',
+      message: 'Order placed successfully, a email was sent to your registered email address with the order details.',
       data: createdOrder,
     })
   } catch (error) {
@@ -191,6 +242,7 @@ const handlePaymentSuccess = async (paymentIntent) => {
       trackingNumber: shippingLabel.trackingNumber,
       carrier: shippingLabel.carrier,
       estimatedDeliveryDate: shippingLabel.estimatedDeliveryDate,
+      labelUrl: shippingLabel.labelUrl,
     }
 
     await updatedOrder.save()
@@ -258,6 +310,29 @@ const updateOrderToDelivered = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
+// Get shipping label for an order
+const getShippingLabel = async (req, res) => {
+  // try {
+  //   const order = await Order.findById(req.params.id);
+
+  //   if (!order) {
+  //     return res.status(404).json({ message: 'Order not found' });
+  //   }
+
+  //   if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+  //     return res.status(403).json({ message: 'You are not a admin or superadmin, you dont have the privilege to access this' });
+  //   }
+
+  //   const labelUrl = order.shippingDetails.labelUrl;
+
+  //   res.status(200).json({ data: labelUrl, message: 'Shipping label fetched successfully'});
+  // } catch (error) {
+  //   res.status(500).json({ message: 'Server error', error: error.message });
+  // }
+
+  res.status(200).json({ data: 'https://support.scurri.co.uk/hc/article_attachments/202482725', message: 'Shipping label fetched successfully' })
+};
 
 const getOrderStats = async (req, res) => {
   try {
@@ -349,5 +424,6 @@ module.exports = {
   createOrder,
   stripe_webhook,
   updateOrderToDelivered,
+  getShippingLabel,
   getOrderStats
 }
