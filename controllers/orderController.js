@@ -50,6 +50,7 @@ const getOrders = async (req, res) => {
     const totalOrders = await Order.countDocuments(query)
     const orders = await Order.find(query)
       .populate('items.productId')
+      .populate('userId', 'name')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
