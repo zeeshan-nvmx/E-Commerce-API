@@ -1,10 +1,29 @@
 const Category = require('../models/Category')
 const { uploadToS3, deleteFromS3 } = require('../utils/s3')
+const Joi = require('joi')
 
 const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find()
-    res.status(200).json({ message: "Categories fetched successfully", data: categories })
+    const categories = await Category.find().lean()
+
+    const formattedCategories = categories.map((category) => {
+      const formattedCategory = {
+        ...category,
+        subcategories: [],
+      }
+
+      if (!category.isSubcategory) {
+        const subcategories = categories.filter((c) => c.parentCategory && c.parentCategory.toString() === category._id.toString())
+        formattedCategory.subcategories = subcategories.map((subcategory) => ({
+          id: subcategory._id,
+          name: subcategory.name,
+        }))
+      }
+
+      return formattedCategory
+    })
+
+    res.status(200).json({ message: 'Categories fetched successfully', data: formattedCategories })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
@@ -12,40 +31,48 @@ const getCategories = async (req, res) => {
 
 const getCategoryById = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id)
+    const category = await Category.findById(req.params.id).lean()
     if (!category) {
       return res.status(404).json({ message: 'Category not found' })
     }
-    res.status(200).json({ message: "Category fetched successfully", data: category })
+
+    const formattedCategory = {
+      ...category,
+      subcategories: [],
+    }
+
+    if (!category.isSubcategory) {
+      const subcategories = await Category.find({ parentCategory: category._id }).select('name _id').lean()
+      formattedCategory.subcategories = subcategories.map((subcategory) => ({
+        id: subcategory._id,
+        name: subcategory.name,
+      }))
+    }
+
+    res.status(200).json({ message: 'Category fetched successfully', data: formattedCategory })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
 
-const createCategory = async (req, res) => {
-  const { name, description } = req.body
-
-  try {
-    const categoryExists = await Category.findOne({ name })
-    if (categoryExists) {
-      return res.status(400).json({ message: 'Category already exists' })
-    }
-
-    let imageUrl = ''
-    if (req.file) {
-      imageUrl = await uploadToS3(req.file, `categories/${req.file.originalname}`)
-    }
-
-    const category = await Category.create({ name, description, image: imageUrl })
-    res.status(201).json({ messsage: "Category created successfully", data: category })
-  } catch (error) {
-    res.status(500).json({ message: 'An error occured while creating the category, creation was unsuccessful', error: error.message })
-  }
-}
-
 const updateCategory = async (req, res) => {
-  const { name, description } = req.body
+  const schema = Joi.object({
+    name: Joi.string().trim().min(3).max(50),
+    description: Joi.string().trim().min(3).max(500),
+    isSubcategory: Joi.boolean(),
+    parentCategoryId: Joi.string().trim().length(24).when('isSubcategory', {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
+  })
 
+  const { error } = schema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  const { name, description, isSubcategory, parentCategoryId } = req.body
   try {
     const category = await Category.findById(req.params.id)
     if (!category) {
@@ -54,19 +81,64 @@ const updateCategory = async (req, res) => {
 
     category.name = name || category.name
     category.description = description || category.description
+    category.isSubcategory = isSubcategory !== undefined ? isSubcategory : category.isSubcategory
+    category.parentCategory = isSubcategory && parentCategoryId ? parentCategoryId : category.parentCategory
 
     if (req.file) {
       if (category.image) {
         await deleteFromS3(category.image.split('/').pop())
       }
-      const imageUrl = await uploadToS3(req.file, `categories/${req.file.originalname}`)
+      const imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname}`)
       category.image = imageUrl
     }
 
     const updatedCategory = await category.save()
     res.json(updatedCategory)
   } catch (error) {
-    res.status(500).json({ message: 'An error occured while updating the category, update was unsuccessful', error: error.message })
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+}
+
+const createCategory = async (req, res) => {
+  const schema = Joi.object({
+    name: Joi.string().trim().min(3).max(50).required(),
+    description: Joi.string().trim().min(3).max(500),
+    isSubcategory: Joi.boolean(),
+    parentCategoryId: Joi.string().trim().length(24).when('isSubcategory', {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.forbidden(),
+    }),
+  })
+
+  const { error } = schema.validate(req.body)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message })
+  }
+
+  const { name, description, isSubcategory, parentCategoryId } = req.body
+  try {
+    const categoryExists = await Category.findOne({ name })
+    if (categoryExists) {
+      return res.status(400).json({ message: 'Category already exists' })
+    }
+
+    let imageUrl = ''
+    if (req.file) {
+      imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname}`)
+    }
+
+    const category = await Category.create({
+      name,
+      description,
+      image: imageUrl,
+      isSubcategory: isSubcategory || false,
+      parentCategory: isSubcategory ? parentCategoryId : null,
+    })
+
+    res.status(201).json({ message: 'Category created successfully', data: category })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
 
@@ -78,13 +150,28 @@ const deleteCategory = async (req, res) => {
     }
 
     if (category.image) {
-      await deleteFromS3(category.image.split('/').pop())
+      try {
+        await deleteFromS3(category.image.split('/').pop())
+      } catch (error) {
+        console.error('Error deleting image:', error)
+      }
     }
 
-    await category.remove()
+    await Category.deleteOne({ _id: category._id })
     res.json({ message: 'Category deleted successfully' })
   } catch (error) {
-    res.status(500).json({ message: 'An error occured while deleting the category, deletion was unsuccessful', error: error.message })
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+}
+
+const getSubcategoriesByCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.categoryId
+    const subcategories = await Category.find({ parentCategory: categoryId })
+
+    res.status(200).json({ message: 'Subcategories fetched successfully', data: subcategories })
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
 
@@ -94,4 +181,5 @@ module.exports = {
   createCategory,
   updateCategory,
   deleteCategory,
+  getSubcategoriesByCategory,
 }

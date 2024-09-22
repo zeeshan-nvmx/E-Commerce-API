@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } = require('../controllers/categoryController')
+const { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } = require('../controllers/categoryControllerS3')
 const multer = require('multer')
 const authorizeRoles = require('../middleware/roleAuthorization')
 const auth = require('../middleware/auth')

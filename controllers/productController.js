@@ -8,61 +8,6 @@ const isValidObjectId = (id) => {
   return ObjectId.isValid(id)
 }
 
-// const getProducts = async (req, res) => {
-//   try {
-//     const { categories, colors, sizes, page = 1, limit = 10, search = '' } = req.query
-//     const query = {}
-
-//     if (categories) {
-//       query.categories = { $in: categories.split(',') }
-//     }
-
-//     if (colors) {
-//       query['colors.name'] = { $in: colors.split(',') }
-//     }
-
-//     if (sizes) {
-//       query['colors.sizes.name'] = { $in: sizes.split(',') }
-//     }
-
-//     // Full-text search query
-//     if (search) {
-//       query.$text = { $search: search }
-//     }
-
-//     const skip = (page - 1) * limit
-//     const totalProducts = await Product.countDocuments(query)
-//     let products
-
-//     if (query.$text) {
-//       products = await Product.find(query)
-//         .populate('categories', 'name _id') // Populate categories with name and _id
-//         .skip(skip)
-//         .limit(limit)
-//         .sort({ score: { $meta: 'textScore' } }) // Sort by text score
-//     } else {
-//       products = await Product.find(query)
-//         .populate('categories', 'name _id') // Populate categories with name and _id
-//         .skip(skip)
-//         .limit(limit)
-//     }
-
-//     const response = {
-//       data: {
-//         products,
-//         totalPages: Math.ceil(totalProducts / limit),
-//         currentPage: page,
-//         totalProducts
-//       },
-//       message: `Products successfully fetched, Showing page ${page} of ${Math.ceil(totalProducts / limit)} pages.`,
-//     }
-
-//     res.json(response)
-//   } catch (error) {
-//     res.status(500).json({ message: 'Server error', error: error.message })
-//   }
-// }
-
 const getProducts = async (req, res) => {
   try {
     const { categories, colors, sizes, page = 1, limit = 10, search = '' } = req.query

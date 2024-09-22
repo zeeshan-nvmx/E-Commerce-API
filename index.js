@@ -44,12 +44,14 @@ const authRoutes = require('./routes/authRoutes')
 const categoryRoutes = require('./routes/categoryRoutes')
 const productRoutes = require('./routes/productRoutes')
 const orderRoutes = require('./routes/orderRoutes')
+const heroRoutes = require('./routes/heroRoutes')
 
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api', heroRoutes)
 
 // 404 handler
 app.use((req, res, next) => {
