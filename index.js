@@ -6,6 +6,7 @@ const helmet = require('helmet')
 const cors = require('cors')
 const rateLimit = require('express-rate-limit')
 const morgan = require('morgan')
+const path = require('path')
 
 dotenv.config()
 const app = express()
@@ -38,6 +39,9 @@ app.use(cors())
 // app.use(limiter)
 
 app.use(express.json())
+
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 // Import routes
 const authRoutes = require('./routes/authRoutes')
