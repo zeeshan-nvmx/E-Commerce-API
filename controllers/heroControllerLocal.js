@@ -8,7 +8,7 @@ const getHeroImages = async (req, res) => {
   try {
     const hero = await Hero.findOne()
     if (!hero) {
-      return res.status(404).json({ message: 'Hero section not found' })
+      return res.status(404).json({ data: [], message: 'Hero section not found' })
     }
     res.json({ data: hero.images, message: 'Hero images successfully fetched' })
   } catch (error) {
