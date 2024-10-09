@@ -2,6 +2,7 @@ const Hero = require('../models/Hero')
 const Banner = require('../models/Banner')
 const { uploadToLocal, deleteFromLocal } = require('../utils/local-storage')
 const path = require('path')
+const fs = require('fs')
 
 // Hero Section Controllers
 const getHeroImages = async (req, res) => {
@@ -41,6 +42,32 @@ const updateHeroImages = async (req, res) => {
   }
 }
 
+// const deleteHeroImage = async (req, res) => {
+//   try {
+//     const hero = await Hero.findOne()
+//     if (!hero) {
+//       return res.status(404).json({ message: 'Hero section not found' })
+//     }
+
+//     const imageId = req.params.imageId
+//     const imagePath = hero.images.find((path) => path.includes(imageId))
+
+//     if (!imagePath) {
+//       return res.status(404).json({ message: 'Image not found' })
+//     }
+
+//     await deleteFromLocal(path.basename(imagePath))
+//     hero.images = hero.images.filter((path) => path !== imagePath)
+//     await hero.save()
+
+//     res.json({ message: 'Hero image deleted successfully' })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
+// Banner Controllers
+
 const deleteHeroImage = async (req, res) => {
   try {
     const hero = await Hero.findOne()
@@ -55,17 +82,28 @@ const deleteHeroImage = async (req, res) => {
       return res.status(404).json({ message: 'Image not found' })
     }
 
-    await deleteFromLocal(path.basename(imagePath))
+    const filePath = path.join(__dirname, 'uploads', path.basename(imagePath))
+
+    // Try to delete the file from the local system
+    try {
+      if (fs.existsSync(filePath)) {
+        await deleteFromLocal(path.basename(imagePath))
+      }
+    } catch (fsError) {
+      // Log or handle file system error but continue with the database update
+      console.log('File system error, continuing to remove from database:', fsError.message)
+    }
+
+    // Remove the image path from the database
     hero.images = hero.images.filter((path) => path !== imagePath)
     await hero.save()
 
-    res.json({ message: 'Hero image deleted successfully' })
+    res.json({ message: 'Hero image deleted successfully from database' })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
 
-// Banner Controllers
 const createBanner = async (req, res) => {
   const { text, linkUrl, backgroundColor, textColor } = req.body
 
