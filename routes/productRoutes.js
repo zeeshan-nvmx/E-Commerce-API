@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { getProducts, getProductById, createProduct, updateProduct, deleteProduct, deleteProductImage, addProductImage } = require('../controllers/productControllerLocal')
+const { getProducts, getProductById, createProduct, updateProduct, deleteProduct, deleteProductImage, addProductImage } = require('../controllers/productControllerS3')
 const multer = require('multer')
 const authorizeRoles = require('../middleware/roleAuthorization')
 const auth = require('../middleware/auth')
