@@ -1,8 +1,10 @@
 const Product = require('../models/Product')
 const Category = require('../models/Category')
-const { uploadToS3, deleteFromS3 } = require('../utils/s3')
+const { uploadToLocal, deleteFromLocal } = require('../utils/local-storage')
 const { ObjectId } = require('mongodb')
 const Joi = require('joi')
+const path = require('path')
+const fs = require('fs')
 
 const isValidObjectId = (id) => {
   return ObjectId.isValid(id)
@@ -23,7 +25,6 @@ const getProducts = async (req, res) => {
       query['colors.sizes.name'] = { $in: sizes.split(',') }
     }
 
-    // Partial word matching query
     if (search) {
       const searchRegex = new RegExp(search, 'i')
       query.$or = [{ name: searchRegex }, { description: searchRegex }, { sku: searchRegex }]
@@ -80,7 +81,6 @@ const createProduct = async (req, res) => {
 
   const { name, description, price, categories, colors } = req.body
 
-  // Parse the colors string into an array of objects
   let parsedColors
   try {
     parsedColors = JSON.parse(colors)
@@ -88,7 +88,6 @@ const createProduct = async (req, res) => {
     return res.status(400).json({ message: 'Invalid colors data' })
   }
 
-  // Validate the parsed colors array
   const colorsSchema = Joi.array()
     .items(
       Joi.object({
@@ -140,8 +139,9 @@ const createProduct = async (req, res) => {
     const productImages = []
     if (req.files) {
       for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${Date.now() + '_' + file.originalname}`)
-        productImages.push(imageUrl)
+        const fileName = `${Date.now()}_${file.originalname}`
+        const imagePath = await uploadToLocal(file, fileName)
+        productImages.push(imagePath)
       }
     }
 
@@ -176,7 +176,6 @@ const updateProduct = async (req, res) => {
 
   const { name, description, price, categories, colors } = req.body
 
-  // Parse the colors string into an array of objects
   let parsedColors
   try {
     parsedColors = colors ? JSON.parse(colors) : undefined
@@ -184,7 +183,6 @@ const updateProduct = async (req, res) => {
     return res.status(400).json({ message: 'Invalid colors data' })
   }
 
-  // Validate the parsed colors array (if provided)
   if (parsedColors) {
     const colorsSchema = Joi.array().items(
       Joi.object({
@@ -243,8 +241,9 @@ const updateProduct = async (req, res) => {
 
     if (req.files) {
       for (const file of req.files) {
-        const imageUrl = await uploadToS3(file, `products/${Date.now() + '_' + file.originalname}`)
-        product.images.push(imageUrl)
+        const fileName = `${Date.now()}_${file.originalname}`
+        const imagePath = await uploadToLocal(file, fileName)
+        product.images.push(imagePath)
       }
     }
 
@@ -265,17 +264,15 @@ const deleteProduct = async (req, res) => {
     let imagesDeletedSuccessfully = true
     const failedImageDeletions = []
 
-    // Delete images from S3
-    for (const imageUrl of product.images) {
+    for (const imagePath of product.images) {
       try {
-        await deleteFromS3(imageUrl.split('/').pop())
+        await deleteFromLocal(path.basename(imagePath))
       } catch (error) {
         imagesDeletedSuccessfully = false
-        failedImageDeletions.push(imageUrl)
+        failedImageDeletions.push(imagePath)
       }
     }
 
-    // Delete the product document
     await Product.deleteOne({ _id: req.params.id })
 
     if (imagesDeletedSuccessfully) {
@@ -302,7 +299,7 @@ const deleteProduct = async (req, res) => {
 //   }
 
 //   const { imageUrl } = req.body
-
+  
 //   try {
 //     const product = await Product.findById(req.params.productId)
 //     if (!product) {
@@ -313,8 +310,8 @@ const deleteProduct = async (req, res) => {
 //       return res.status(404).json({ message: 'Image not found' })
 //     }
 
-//     await deleteFromS3(imageUrl.split('/').pop())
-//     product.images = product.images.filter((url) => url !== imageUrl)
+//     await deleteFromLocal(path.basename(imageUrl))
+//     product.images = product.images.filter((path) => path !== imageUrl)
 //     await product.save()
 
 //     res.json({ message: 'Image deleted successfully' })
@@ -342,19 +339,19 @@ const deleteProductImage = async (req, res) => {
     }
 
     if (!product.images.includes(imageUrl)) {
-      return res.status(404).json({ message: 'Image not found' })
+      return res.status(404).json({ message: 'Image not found in product' })
     }
 
-    // Try to delete from S3
-    try {
-      await deleteFromS3(imageUrl.split('/').pop())
-    } catch (s3Error) {
-      // Log or handle S3 error but proceed with the image URL deletion
-      console.log('S3 error, continuing to remove from database:', s3Error.message)
+    const filePath = path.join(__dirname, 'uploads', path.basename(imageUrl))
+
+    // Check if the file exists
+    if (fs.existsSync(filePath)) {
+      // If the file exists, delete it
+      await deleteFromLocal(path.basename(imageUrl))
     }
 
-    // Remove the image URL from the database even if the S3 deletion fails
-    product.images = product.images.filter((url) => url !== imageUrl)
+    // Whether the file exists or not, remove the image URL from the database
+    product.images = product.images.filter((path) => path !== imageUrl)
     await product.save()
 
     res.json({ message: 'Image deleted successfully from database' })
@@ -362,6 +359,8 @@ const deleteProductImage = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
+
 
 
 module.exports = {

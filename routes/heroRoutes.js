@@ -8,7 +8,7 @@ const {
   getBanners,
   updateBanner,
   deleteBanner,
-} = require('../controllers/heroController')
+} = require('../controllers/heroControllerLocal')
 const multer = require('multer')
 const authorizeRoles = require('../middleware/roleAuthorization')
 const auth = require('../middleware/auth')

@@ -1,6 +1,8 @@
 const Category = require('../models/Category')
-const { uploadToS3, deleteFromS3 } = require('../utils/s3')
+const Product = require('../models/Product')
+const { uploadToLocal, deleteFromLocal } = require('../utils/local-storage')
 const Joi = require('joi')
+const path = require('path')
 
 const getCategories = async (req, res) => {
   try {
@@ -86,10 +88,11 @@ const updateCategory = async (req, res) => {
 
     if (req.file) {
       if (category.image) {
-        await deleteFromS3(category.image.split('/').pop())
+        await deleteFromLocal(path.basename(category.image))
       }
-      const imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname}`)
-      category.image = imageUrl
+      const fileName = `${Date.now()}_${req.file.originalname}`
+      const imagePath = await uploadToLocal(req.file, fileName)
+      category.image = imagePath
     }
 
     const updatedCategory = await category.save()
@@ -123,15 +126,16 @@ const createCategory = async (req, res) => {
       return res.status(400).json({ message: 'Category already exists' })
     }
 
-    let imageUrl = ''
+    let imagePath = ''
     if (req.file) {
-      imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname}`)
+      const fileName = `${Date.now()}_${req.file.originalname}`
+      imagePath = await uploadToLocal(req.file, fileName)
     }
 
     const category = await Category.create({
       name,
       description,
-      image: imageUrl,
+      image: imagePath,
       isSubcategory: isSubcategory || false,
       parentCategory: isSubcategory ? parentCategoryId : null,
     })
@@ -151,7 +155,7 @@ const createCategory = async (req, res) => {
 
 //     if (category.image) {
 //       try {
-//         await deleteFromS3(category.image.split('/').pop())
+//         await deleteFromLocal(path.basename(category.image))
 //       } catch (error) {
 //         console.error('Error deleting image:', error)
 //       }
@@ -171,12 +175,12 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' })
     }
 
-    // Delete the category image from S3 if it exists
+    // Delete the category image if it exists
     if (category.image) {
       try {
-        await deleteFromS3(category.image.split('/').pop())
+        await deleteFromLocal(path.basename(category.image))
       } catch (error) {
-        console.error('Error deleting category image from S3:', error)
+        console.error('Error deleting image:', error)
       }
     }
 
@@ -185,22 +189,22 @@ const deleteCategory = async (req, res) => {
 
     // Delete all associated products
     for (const product of productsToDelete) {
-      // Delete product images from S3
+      // Delete product images
       for (const image of product.images) {
         try {
-          await deleteFromS3(image.split('/').pop())
+          await deleteFromLocal(path.basename(image))
         } catch (error) {
-          console.error('Error deleting product image from S3:', error)
+          console.error('Error deleting product image:', error)
         }
       }
 
-      // Delete color images from S3
+      // Delete color images
       for (const color of product.colors) {
         if (color.image) {
           try {
-            await deleteFromS3(color.image.split('/').pop())
+            await deleteFromLocal(path.basename(color.image))
           } catch (error) {
-            console.error('Error deleting color image from S3:', error)
+            console.error('Error deleting color image:', error)
           }
         }
       }
