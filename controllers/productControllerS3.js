@@ -291,6 +291,38 @@ const deleteProduct = async (req, res) => {
   }
 }
 
+// const deleteProductImage = async (req, res) => {
+//   const schema = Joi.object({
+//     imageUrl: Joi.string().trim().required(),
+//   }).options({ abortEarly: false })
+
+//   const { error } = schema.validate(req.body, { abortEarly: false })
+//   if (error) {
+//     return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
+//   }
+
+//   const { imageUrl } = req.body
+
+//   try {
+//     const product = await Product.findById(req.params.productId)
+//     if (!product) {
+//       return res.status(404).json({ message: 'Product not found' })
+//     }
+
+//     if (!product.images.includes(imageUrl)) {
+//       return res.status(404).json({ message: 'Image not found' })
+//     }
+
+//     await deleteFromS3(imageUrl.split('/').pop())
+//     product.images = product.images.filter((url) => url !== imageUrl)
+//     await product.save()
+
+//     res.json({ message: 'Image deleted successfully' })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
 const deleteProductImage = async (req, res) => {
   const schema = Joi.object({
     imageUrl: Joi.string().trim().required(),
@@ -313,15 +345,24 @@ const deleteProductImage = async (req, res) => {
       return res.status(404).json({ message: 'Image not found' })
     }
 
-    await deleteFromS3(imageUrl.split('/').pop())
+    // Try to delete from S3
+    try {
+      await deleteFromS3(imageUrl.split('/').pop())
+    } catch (s3Error) {
+      // Log or handle S3 error but proceed with the image URL deletion
+      console.log('S3 error, continuing to remove from database:', s3Error.message)
+    }
+
+    // Remove the image URL from the database even if the S3 deletion fails
     product.images = product.images.filter((url) => url !== imageUrl)
     await product.save()
 
-    res.json({ message: 'Image deleted successfully' })
+    res.json({ message: 'Image deleted successfully from database' })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
 
 module.exports = {
   getProducts,
