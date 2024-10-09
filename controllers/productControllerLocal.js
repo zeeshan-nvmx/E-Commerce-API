@@ -4,6 +4,7 @@ const { uploadToLocal, deleteFromLocal } = require('../utils/local-storage')
 const { ObjectId } = require('mongodb')
 const Joi = require('joi')
 const path = require('path')
+const fs = require('fs')
 
 const isValidObjectId = (id) => {
   return ObjectId.isValid(id)
@@ -287,9 +288,41 @@ const deleteProduct = async (req, res) => {
   }
 }
 
+// const deleteProductImage = async (req, res) => {
+//   const schema = Joi.object({
+//     imageUrl: Joi.string().trim().required(),
+//   }).options({ abortEarly: false })
+
+//   const { error } = schema.validate(req.body, { abortEarly: false })
+//   if (error) {
+//     return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
+//   }
+
+//   const { imageUrl } = req.body
+  
+//   try {
+//     const product = await Product.findById(req.params.productId)
+//     if (!product) {
+//       return res.status(404).json({ message: 'Product not found' })
+//     }
+
+//     if (!product.images.includes(imageUrl)) {
+//       return res.status(404).json({ message: 'Image not found' })
+//     }
+
+//     await deleteFromLocal(path.basename(imageUrl))
+//     product.images = product.images.filter((path) => path !== imageUrl)
+//     await product.save()
+
+//     res.json({ message: 'Image deleted successfully' })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
 const deleteProductImage = async (req, res) => {
   const schema = Joi.object({
-    imagePath: Joi.string().trim().required(),
+    imageUrl: Joi.string().trim().required(),
   }).options({ abortEarly: false })
 
   const { error } = schema.validate(req.body, { abortEarly: false })
@@ -297,7 +330,7 @@ const deleteProductImage = async (req, res) => {
     return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
   }
 
-  const { imagePath } = req.body
+  const { imageUrl } = req.body
 
   try {
     const product = await Product.findById(req.params.productId)
@@ -305,19 +338,30 @@ const deleteProductImage = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' })
     }
 
-    if (!product.images.includes(imagePath)) {
-      return res.status(404).json({ message: 'Image not found' })
+    if (!product.images.includes(imageUrl)) {
+      return res.status(404).json({ message: 'Image not found in product' })
     }
 
-    await deleteFromLocal(path.basename(imagePath))
-    product.images = product.images.filter((path) => path !== imagePath)
+    const filePath = path.join(__dirname, 'uploads', path.basename(imageUrl))
+
+    // Check if the file exists
+    if (fs.existsSync(filePath)) {
+      // If the file exists, delete it
+      await deleteFromLocal(path.basename(imageUrl))
+    }
+
+    // Whether the file exists or not, remove the image URL from the database
+    product.images = product.images.filter((path) => path !== imageUrl)
     await product.save()
 
-    res.json({ message: 'Image deleted successfully' })
+    res.json({ message: 'Image deleted successfully from database' })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
+
+
 
 module.exports = {
   getProducts,

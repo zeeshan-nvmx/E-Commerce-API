@@ -1,4 +1,5 @@
 const Category = require('../models/Category')
+const Product = require('../models/Product')
 const { uploadToLocal, deleteFromLocal } = require('../utils/local-storage')
 const Joi = require('joi')
 const path = require('path')
@@ -145,6 +146,28 @@ const createCategory = async (req, res) => {
   }
 }
 
+// const deleteCategory = async (req, res) => {
+//   try {
+//     const category = await Category.findById(req.params.id)
+//     if (!category) {
+//       return res.status(404).json({ message: 'Category not found' })
+//     }
+
+//     if (category.image) {
+//       try {
+//         await deleteFromLocal(path.basename(category.image))
+//       } catch (error) {
+//         console.error('Error deleting image:', error)
+//       }
+//     }
+
+//     await Category.deleteOne({ _id: category._id })
+//     res.json({ message: 'Category deleted successfully' })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
 const deleteCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id)
@@ -152,6 +175,7 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' })
     }
 
+    // Delete the category image if it exists
     if (category.image) {
       try {
         await deleteFromLocal(path.basename(category.image))
@@ -160,8 +184,39 @@ const deleteCategory = async (req, res) => {
       }
     }
 
+    // Find all products associated with this category
+    const productsToDelete = await Product.find({ categories: category._id })
+
+    // Delete all associated products
+    for (const product of productsToDelete) {
+      // Delete product images
+      for (const image of product.images) {
+        try {
+          await deleteFromLocal(path.basename(image))
+        } catch (error) {
+          console.error('Error deleting product image:', error)
+        }
+      }
+
+      // Delete color images
+      for (const color of product.colors) {
+        if (color.image) {
+          try {
+            await deleteFromLocal(path.basename(color.image))
+          } catch (error) {
+            console.error('Error deleting color image:', error)
+          }
+        }
+      }
+
+      // Delete the product
+      await Product.deleteOne({ _id: product._id })
+    }
+
+    // Delete the category
     await Category.deleteOne({ _id: category._id })
-    res.json({ message: 'Category deleted successfully' })
+
+    res.json({ message: 'Category and associated products deleted successfully' })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }

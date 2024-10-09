@@ -142,6 +142,28 @@ const createCategory = async (req, res) => {
   }
 }
 
+// const deleteCategory = async (req, res) => {
+//   try {
+//     const category = await Category.findById(req.params.id)
+//     if (!category) {
+//       return res.status(404).json({ message: 'Category not found' })
+//     }
+
+//     if (category.image) {
+//       try {
+//         await deleteFromS3(category.image.split('/').pop())
+//       } catch (error) {
+//         console.error('Error deleting image:', error)
+//       }
+//     }
+
+//     await Category.deleteOne({ _id: category._id })
+//     res.json({ message: 'Category deleted successfully' })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
 const deleteCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id)
@@ -149,16 +171,48 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' })
     }
 
+    // Delete the category image from S3 if it exists
     if (category.image) {
       try {
         await deleteFromS3(category.image.split('/').pop())
       } catch (error) {
-        console.error('Error deleting image:', error)
+        console.error('Error deleting category image from S3:', error)
       }
     }
 
+    // Find all products associated with this category
+    const productsToDelete = await Product.find({ categories: category._id })
+
+    // Delete all associated products
+    for (const product of productsToDelete) {
+      // Delete product images from S3
+      for (const image of product.images) {
+        try {
+          await deleteFromS3(image.split('/').pop())
+        } catch (error) {
+          console.error('Error deleting product image from S3:', error)
+        }
+      }
+
+      // Delete color images from S3
+      for (const color of product.colors) {
+        if (color.image) {
+          try {
+            await deleteFromS3(color.image.split('/').pop())
+          } catch (error) {
+            console.error('Error deleting color image from S3:', error)
+          }
+        }
+      }
+
+      // Delete the product
+      await Product.deleteOne({ _id: product._id })
+    }
+
+    // Delete the category
     await Category.deleteOne({ _id: category._id })
-    res.json({ message: 'Category deleted successfully' })
+
+    res.json({ message: 'Category and associated products deleted successfully' })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
