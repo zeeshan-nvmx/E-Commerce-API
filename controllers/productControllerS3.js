@@ -32,7 +32,7 @@ const getProducts = async (req, res) => {
     const skip = (page - 1) * limit
     const totalProducts = await Product.countDocuments(query)
 
-    const products = await Product.find(query).populate('categories', 'name _id').skip(skip).limit(limit)
+    const products = await Product.find(query).populate('categories', 'name _id').sort({ createdAt: -1 }).skip(skip).limit(limit)
 
     const response = {
       data: {
