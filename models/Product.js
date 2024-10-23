@@ -18,7 +18,12 @@ const colorSchema = new mongoose.Schema({
     required: true,
   },
   image: {
-    type: String,
+    original: {
+      type: String,
+    },
+    thumbnail: {
+      type: String,
+    },
   },
   sizes: [sizeSchema],
 })
@@ -50,13 +55,20 @@ const productSchema = new mongoose.Schema({
   ],
   images: [
     {
-      type: String,
+      original: {
+        type: String,
+        required: true,
+      },
+      thumbnail: {
+        type: String,
+        required: true,
+      },
     },
   ],
   colors: [colorSchema],
 })
 
-productSchema.index({ name: 'text', description: 'text', sku: 'text'})
+productSchema.index({ name: 'text', description: 'text', sku: 'text' })
 
 const Product = mongoose.model('Product', productSchema)
 
