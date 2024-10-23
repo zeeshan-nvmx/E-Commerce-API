@@ -46,6 +46,10 @@ const productSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  featured: {
+    type: Boolean,
+    default: false,
+  },
   categories: [
     {
       type: mongoose.Schema.Types.ObjectId,

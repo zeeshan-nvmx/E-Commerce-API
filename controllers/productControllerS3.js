@@ -94,6 +94,7 @@ const createProduct = async (req, res) => {
     name: Joi.string().trim().min(3).max(100).required(),
     description: Joi.string().trim().min(3).max(500).required(),
     price: Joi.number().min(0).required(),
+    featured: Joi.boolean(),
     categories: Joi.string().trim().required(),
     colors: Joi.string().trim().required(),
   }).options({ abortEarly: false })
@@ -103,7 +104,7 @@ const createProduct = async (req, res) => {
     return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
   }
 
-  const { name, description, price, categories, colors } = req.body
+  const { name, description, price,featured, categories, colors } = req.body
 
   let parsedColors
   try {
@@ -189,6 +190,7 @@ const createProduct = async (req, res) => {
       name,
       description,
       price,
+      featured,
       categories: categoryIds,
       sku,
       images: productImages,
@@ -208,6 +210,7 @@ const updateProduct = async (req, res) => {
     name: Joi.string().trim().min(3).max(100),
     description: Joi.string().trim().min(3).max(500),
     price: Joi.number().min(0),
+    featured: Joi.boolean(),
     categories: Joi.string().trim(),
     colors: Joi.string().trim(),
   }).options({ abortEarly: false })
@@ -217,7 +220,7 @@ const updateProduct = async (req, res) => {
     return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
   }
 
-  const { name, description, price, categories, colors } = req.body
+  const { name, description, price, featured, categories, colors } = req.body
 
   let parsedColors
   try {
@@ -235,6 +238,7 @@ const updateProduct = async (req, res) => {
     if (name) product.name = name
     if (description) product.description = description
     if (price) product.price = price
+    if (featured) product.featured = featured
 
     if (categories) {
       const ids = categories.split(',').map((id) => id.trim())
