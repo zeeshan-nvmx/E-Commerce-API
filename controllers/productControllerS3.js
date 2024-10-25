@@ -19,13 +19,16 @@ const processAndUploadImage = async (image, pathPrefix = 'products') => {
     })
     .toBuffer()
 
+  // Remove spaces from the original image name
+  const sanitizedOriginalName = image.originalname.replace(/\s+/g, '')
+
   // Upload original image
-  const originalImageUrl = await uploadToS3(image, `${pathPrefix}/original/${Date.now()}_${image.originalname}`)
+  const originalImageUrl = await uploadToS3(image, `${pathPrefix}/original/${Date.now()}_${sanitizedOriginalName}`)
 
   // Upload thumbnail
   const thumbnailImageUrl = await uploadToS3(
     { ...image, buffer: thumbnailBuffer },
-    `${pathPrefix}/thumbnails/${Date.now()}_thumb_${image.originalname}`
+    `${pathPrefix}/thumbnails/${Date.now()}_thumb_${sanitizedOriginalName}`
   )
 
   return {
