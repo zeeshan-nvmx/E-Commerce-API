@@ -47,7 +47,7 @@ const addAddressSchema = Joi.object({
   line1: Joi.string().min(3).max(100).required(),
   line2: Joi.string().min(3).max(100).optional(),
   city: Joi.string().min(3).max(50).required(),
-  state: Joi.string().min(2).max(50).required(),
+  state: Joi.string().min(2).max(50).optional(),
   country: Joi.string().min(2).max(50).required(),
   postal_code: Joi.string().min(3).max(20).required(),
 }).options({ abortEarly: false })
