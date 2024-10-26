@@ -1,4 +1,5 @@
 const Category = require('../models/Category')
+const Product = require('../models/Product')
 const { uploadToS3, deleteFromS3 } = require('../utils/s3')
 const Joi = require('joi')
 
@@ -194,16 +195,16 @@ const deleteCategory = async (req, res) => {
         }
       }
 
-      // Delete color images from S3
-      for (const color of product.colors) {
-        if (color.image) {
-          try {
-            await deleteFromS3(color.image.split('/').pop())
-          } catch (error) {
-            console.error('Error deleting color image from S3:', error)
-          }
-        }
-      }
+      // // Delete color images from S3
+      // for (const color of product.colors) {
+      //   if (color.image) {
+      //     try {
+      //       await deleteFromS3(color.image.split('/').pop())
+      //     } catch (error) {
+      //       console.error('Error deleting color image from S3:', error)
+      //     }
+      //   }
+      // }
 
       // Delete the product
       await Product.deleteOne({ _id: product._id })
