@@ -206,7 +206,7 @@ const deleteCategory = async (req, res) => {
       //   }
       // }
 
-      // Delete the product
+      // Delete the single product
       await Product.deleteOne({ _id: product._id })
     }
 
