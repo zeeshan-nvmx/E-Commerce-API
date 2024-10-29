@@ -126,7 +126,7 @@ const createCategory = async (req, res) => {
 
     let imageUrl = ''
     if (req.file) {
-      imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname}`)
+      imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname.split(' ').join('_')}`)
     }
 
     const category = await Category.create({
@@ -175,7 +175,7 @@ const deleteCategory = async (req, res) => {
     // Delete the category image from S3 if it exists
     if (category.image) {
       try {
-        await deleteFromS3(category.image.split('/').pop())
+        await deleteFromS3(category.image?.split('/').pop())
       } catch (error) {
         console.error('Error deleting category image from S3:', error)
       }
@@ -189,7 +189,7 @@ const deleteCategory = async (req, res) => {
       // Delete product images from S3
       for (const image of product.images) {
         try {
-          await deleteFromS3(image.split('/').pop())
+          await deleteFromS3(image?.split('/').pop())
         } catch (error) {
           console.error('Error deleting product image from S3:', error)
         }
