@@ -68,6 +68,7 @@ app.use((req, res, next) => {
 // Error handler middleware
 app.use(errorHandler)
 
+
 const PORT = process.env.PORT || 4000
 
 // Connect to the database and start the server
