@@ -11,11 +11,11 @@ const isValidObjectId = (id) => {
 
 // Helper function to process image and create thumbnail
 const processAndUploadImage = async (image, pathPrefix = 'products') => {
-  // Generate thumbnail
+  // Generate thumbnail with maintained aspect ratio
   const thumbnailBuffer = await sharp(image.buffer)
-    .resize(300, 300, {
-      fit: 'cover',
-      position: 'center',
+    .resize(400, 400, {
+      fit: 'inside', 
+      withoutEnlargement: true, 
     })
     .toBuffer()
 
@@ -26,17 +26,13 @@ const processAndUploadImage = async (image, pathPrefix = 'products') => {
   const originalImageUrl = await uploadToS3(image, `${pathPrefix}/original/${Date.now()}_${sanitizedOriginalName}`)
 
   // Upload thumbnail
-  const thumbnailImageUrl = await uploadToS3(
-    { ...image, buffer: thumbnailBuffer },
-    `${pathPrefix}/thumbnails/${Date.now()}_thumb_${sanitizedOriginalName}`
-  )
+  const thumbnailImageUrl = await uploadToS3({ ...image, buffer: thumbnailBuffer }, `${pathPrefix}/thumbnails/${Date.now()}_thumb_${sanitizedOriginalName}`)
 
   return {
     original: originalImageUrl,
     thumbnail: thumbnailImageUrl,
   }
 }
-
 const getProducts = async (req, res) => {
   try {
     const { categories, colors, sizes, page = 1, limit = 10, search = '' } = req.query
