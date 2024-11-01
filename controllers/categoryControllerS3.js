@@ -2,7 +2,39 @@ const Category = require('../models/Category')
 const Product = require('../models/Product')
 const { uploadToS3, deleteFromS3 } = require('../utils/s3')
 const Joi = require('joi')
+const sharp = require('sharp')
+const { ObjectId, isValidObjectId } = require('mongoose').Types
 
+//Image processing helper function ( only for category )
+const processAndUploadImage = async (imageFile, pathPrefix = 'categories') => {
+  try {
+    
+    const thumbnailBuffer = await sharp(imageFile.buffer)
+      .resize(400, 400, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .toBuffer()
+
+    // Remove spaces from the original image name
+    const sanitizedOriginalName = imageFile.originalname.replace(/\s+/g, '')
+    const timestamp = Date.now()
+
+    // Upload original image
+    const image = await uploadToS3(imageFile, `${pathPrefix}/${timestamp}_${sanitizedOriginalName}`)
+
+    // Upload thumbnail
+    const thumbnail = await uploadToS3({ ...imageFile, buffer: thumbnailBuffer }, `${pathPrefix}/thumbnails/${timestamp}_thumb_${sanitizedOriginalName}`)
+
+    return {
+      image,
+      thumbnail,
+    }
+  } catch (error) {
+    console.error('Error in processAndUploadImage:', error)
+    throw error
+  }
+}
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find().lean()
@@ -80,22 +112,40 @@ const updateCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' })
     }
 
-    category.name = name || category.name
-    category.description = description || category.description
-    category.isSubcategory = isSubcategory !== undefined ? isSubcategory : category.isSubcategory
-    category.parentCategory = isSubcategory && parentCategoryId ? parentCategoryId : category.parentCategory
+    if (name) category.name = name
+    if (description) category.description = description
+    if (isSubcategory !== undefined) category.isSubcategory = isSubcategory
+    if (isSubcategory && parentCategoryId) category.parentCategory = parentCategoryId
 
+    // Only handle image updates if a new file is provided
     if (req.file) {
-      if (category.image) {
-        await deleteFromS3(category.image.split('/').pop())
+      try {
+        // Delete existing images if they exist
+        if (category.image) {
+          await deleteFromS3(category.image.split('/').pop())
+        }
+        if (category.thumbnail) {
+          await deleteFromS3(category.thumbnail.split('/').pop())
+        }
+
+        // Process and upload new image
+        const result = await processAndUploadImage(req.file)
+        console.log('Processed image result:', result) // Debug log
+
+        // Update category with new image URLs
+        category.image = result.image
+        category.thumbnail = result.thumbnail
+      } catch (error) {
+        console.error('Error processing image:', error)
+        return res.status(500).json({ message: 'Error processing image', error: error.message })
       }
-      const imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname}`)
-      category.image = imageUrl
     }
 
     const updatedCategory = await category.save()
+    console.log('Updated category:', updatedCategory) // Debug log
     res.json(updatedCategory)
   } catch (error) {
+    console.error('Error in updateCategory:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
@@ -124,46 +174,36 @@ const createCategory = async (req, res) => {
       return res.status(400).json({ message: 'Category already exists' })
     }
 
-    let imageUrl = ''
+    let image = ''
+    let thumbnail = ''
+
     if (req.file) {
-      imageUrl = await uploadToS3(req.file, `categories/${Date.now() + '_' + req.file.originalname.split(' ').join('_')}`)
+      try {
+        const result = await processAndUploadImage(req.file)
+        console.log('Processed image result:', result) // Debug log
+        image = result.image
+        thumbnail = result.thumbnail
+      } catch (error) {
+        console.error('Error processing image:', error)
+        return res.status(500).json({ message: 'Error processing image', error: error.message })
+      }
     }
 
     const category = await Category.create({
       name,
       description,
-      image: imageUrl,
+      image,
+      thumbnail,
       isSubcategory: isSubcategory || false,
       parentCategory: isSubcategory ? parentCategoryId : null,
     })
 
     res.status(201).json({ message: 'Category created successfully', data: category })
   } catch (error) {
+    console.error('Error in createCategory:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
-
-// const deleteCategory = async (req, res) => {
-//   try {
-//     const category = await Category.findById(req.params.id)
-//     if (!category) {
-//       return res.status(404).json({ message: 'Category not found' })
-//     }
-
-//     if (category.image) {
-//       try {
-//         await deleteFromS3(category.image.split('/').pop())
-//       } catch (error) {
-//         console.error('Error deleting image:', error)
-//       }
-//     }
-
-//     await Category.deleteOne({ _id: category._id })
-//     res.json({ message: 'Category deleted successfully' })
-//   } catch (error) {
-//     res.status(500).json({ message: 'Server error', error: error.message })
-//   }
-// }
 
 const deleteCategory = async (req, res) => {
   try {
@@ -172,12 +212,19 @@ const deleteCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' })
     }
 
-    // Delete the category image from S3 if it exists
+    // Delete both original and thumbnail images from S3 if they exist
     if (category.image) {
       try {
-        await deleteFromS3(category.image?.split('/').pop())
+        await deleteFromS3(category.image.split('/').pop())
       } catch (error) {
         console.error('Error deleting category image from S3:', error)
+      }
+    }
+    if (category.thumbnail) {
+      try {
+        await deleteFromS3(category.thumbnail.split('/').pop())
+      } catch (error) {
+        console.error('Error deleting category thumbnail from S3:', error)
       }
     }
 
@@ -194,17 +241,6 @@ const deleteCategory = async (req, res) => {
           console.error('Error deleting product image from S3:', error)
         }
       }
-
-      // // Delete color images from S3
-      // for (const color of product.colors) {
-      //   if (color.image) {
-      //     try {
-      //       await deleteFromS3(color.image.split('/').pop())
-      //     } catch (error) {
-      //       console.error('Error deleting color image from S3:', error)
-      //     }
-      //   }
-      // }
 
       // Delete the single product
       await Product.deleteOne({ _id: product._id })

@@ -13,6 +13,9 @@ const categorySchema = new Schema({
   image: {
     type: String,
   },
+  thumbnail: {
+    type: String
+  },
   isSubcategory: {
     type: Boolean,
     default: false,

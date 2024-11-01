@@ -18,8 +18,7 @@ const uploadToS3 = async (file, key) => {
   }
 
   try {
-    const data = await s3.send(new PutObjectCommand(params))
-    console.log('Upload successful:', data);
+    await s3.send(new PutObjectCommand(params))
 
     const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.backblazeb2.com/${key}`
     return publicUrl
