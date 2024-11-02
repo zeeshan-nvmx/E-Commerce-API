@@ -34,8 +34,25 @@ const getOrders = async (req, res) => {
     }
 
     const totalOrders = await Order.countDocuments(query)
+
+
+    // const orders = await Order.find(query)
+    //   .populate('items.productId', 'name price sku images.0.original images.0.thumbnail')
+    //   .populate('userId', 'name')
+    //   .sort({ createdAt: -1 })
+    //   .skip((page - 1) * limit)
+    //   .limit(parseInt(limit))
+
     const orders = await Order.find(query)
-      .populate('items.productId')
+      .populate({
+        path: 'items.productId',
+        select: 'name price sku',
+        options: {
+          projection: {
+            images: { $arrayElemAt: ['$images', 0] },
+          },
+        },
+      })
       .populate('userId', 'name')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
