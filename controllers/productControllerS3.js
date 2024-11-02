@@ -152,7 +152,7 @@ const createProduct = async (req, res) => {
     }
 
     function generateSKU() {
-      const prefix = 'rav '
+      const prefix = 'LABEL-'
       const randomPart = Math.random().toString(36).substring(2, 10)
       return prefix + randomPart.toLocaleUpperCase()
     }
