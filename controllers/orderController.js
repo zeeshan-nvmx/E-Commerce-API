@@ -5,20 +5,6 @@ const royalMailAPI = require('../utils/royalMailAPI')
 const sendEmail = require('../utils/sendEmail')
 const User = require('../models/User')
 
-// const getOrders = async (req, res) => {
-//   try {
-//     let orders
-//     if (req.user.role === 'customer') {
-//       orders = await Order.find({ userId: req.user.id }).populate('items.productId').sort({ createdAt: -1 })
-//     } else {
-//       orders = await Order.find().populate('items.productId').sort({ createdAt: -1 })
-//     }
-
-//     res.json({ message: 'Orders fetched successfully', data: orders })
-//   } catch (error) {
-//     res.status(500).json({ message: 'Something went wrong while fetching orders', error: error.message })
-//   }
-// }
 
 const getOrders = async (req, res) => {
   try {
@@ -173,7 +159,7 @@ const createOrder = async (req, res) => {
       ${orderItems
         .map(
           (item) =>
-            `<tr><td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.color}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.size}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td><td style="border: 1px solid #ddd; padding: 8px; text-align: right;">$${item.price}</td></tr>`
+            `<tr><td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.color}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.size}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td><td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.price}</td></tr>`
         )
         .join('')}
     </tbody>
@@ -187,10 +173,10 @@ const createOrder = async (req, res) => {
   <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${shippingAddress.state}, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
   <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${billingAddress.state}, ${billingAddress.country}, ${billingAddress.postal_code}</p>
   <p>Payment Method: ${paymentMethod}</p>
-  <p>Items Total: $${formattedItemsPrice}</p>
-  <p>Shipping: $${shippingPrice}</p>
-  <p>Tax: $${taxPrice}</p>
-  <p>Total: $${totalPrice}</p>
+  <p>Items Total: ${formattedItemsPrice}</p>
+  <p>Shipping: ${shippingPrice}</p>
+  <p>Tax: ${taxPrice}</p>
+  <p>Total: ${totalPrice}</p>
   <p>Your order will be shipped shortly. Thank you for shopping with us!</p>
 `
 
