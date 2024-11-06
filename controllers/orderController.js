@@ -290,7 +290,7 @@ const updateOrderToDelivered = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' })
     }
 
-    order.isDelivered = true
+    order.isDelivered = !order.isDelivered
     order.deliveredAt = Date.now()
 
     const updatedOrder = await order.save()
