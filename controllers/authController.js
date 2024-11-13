@@ -9,9 +9,10 @@ const registerSchema = Joi.object({
   name: Joi.string().min(3).max(50).required(),
   email: Joi.string().email().required(),
   phone: Joi.string()
-    .pattern(/^[0-9]{10,15}$/)
+    .pattern(/^(?:\+?88)?0[1-9]\d{8}$/) 
     .optional()
-    .allow(''),
+    .allow('', null),
+
   password: Joi.string().min(6).required(),
 }).options({ abortEarly: false })
 
