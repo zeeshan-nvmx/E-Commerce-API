@@ -86,8 +86,14 @@ const orderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ['in store', 'dispatched', 'delivered'],
+    enum: ['in store', 'dispatched', 'delivered', 'cancelled', 'refunded'],
     default: 'in store',
+    required: true,
+  },
+  paidStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'refunded', 'on hold', 'processing'],
+    default: 'pending',
     required: true,
   },
   shippingDetails: {

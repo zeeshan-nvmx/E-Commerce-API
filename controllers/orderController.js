@@ -290,18 +290,33 @@ const stripe_webhook = async (req, res) => {
 //       return res.status(404).json({ message: 'Order not found' })
 //     }
 
-//     order.isDelivered = !order.isDelivered
-//     order.deliveredAt = Date.now()
+//     const { orderStatus } = req.body
+
+//     if (!['in store', 'dispatched', 'delivered'].includes(orderStatus)) {
+//       return res.status(400).json({ message: 'Invalid order status' })
+//     }
+
+//     order.orderStatus = orderStatus
+
+//     // Update isDelivered and deliveredAt if status is set to delivered
+//     if (orderStatus === 'delivered') {
+//       order.isDelivered = true
+//       order.deliveredAt = Date.now()
+//     } else {
+//       order.isDelivered = false
+//       order.deliveredAt = null
+//     }
 
 //     const updatedOrder = await order.save()
 
-//     res.json({ message: 'Order delivered successfully', order: updatedOrder })
+//     res.json({
+//       message: `Order status updated to ${orderStatus} successfully`,
+//       order: updatedOrder,
+//     })
 //   } catch (error) {
 //     res.status(500).json({ message: 'Server error', error: error.message })
 //   }
 // }
-
-// Get shipping label for an order
 
 const updateOrderToDelivered = async (req, res) => {
   try {
@@ -310,33 +325,49 @@ const updateOrderToDelivered = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' })
     }
 
-    const { orderStatus } = req.body
+    const { orderStatus, paidStatus } = req.body
 
-    if (!['in store', 'dispatched', 'delivered'].includes(orderStatus)) {
+    if (orderStatus && !['in store', 'dispatched', 'delivered', 'cancelled', 'refunded'].includes(orderStatus)) {
       return res.status(400).json({ message: 'Invalid order status' })
     }
 
-    order.orderStatus = orderStatus
+    if (paidStatus && !['pending', 'paid', 'refunded', 'on hold', 'processing'].includes(paidStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status' })
+    }
 
-    // Update isDelivered and deliveredAt if status is set to delivered
-    if (orderStatus === 'delivered') {
-      order.isDelivered = true
-      order.deliveredAt = Date.now()
-    } else {
-      order.isDelivered = false
-      order.deliveredAt = null
+    if (orderStatus) {
+      order.orderStatus = orderStatus
+
+      if (orderStatus === 'delivered') {
+        order.isDelivered = true
+        order.deliveredAt = Date.now()
+      } else if (orderStatus === 'cancelled' || orderStatus === 'refunded') {
+        order.isDelivered = false
+        order.deliveredAt = null
+      }
+    }
+
+    if (paidStatus) {
+      if (paidStatus === 'paid') {
+        order.isPaid = true
+        order.paidAt = Date.now()
+      } else if (paidStatus === 'refunded' || paidStatus === 'on hold') {
+        order.isPaid = false
+        order.paidAt = null
+      }
     }
 
     const updatedOrder = await order.save()
 
     res.json({
-      message: `Order status updated to ${orderStatus} successfully`,
+      message: 'Order updated successfully',
       order: updatedOrder,
     })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
+
 const getShippingLabel = async (req, res) => {
   // try {
   //   const order = await Order.findById(req.params.id);
