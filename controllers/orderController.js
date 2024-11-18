@@ -335,6 +335,7 @@ const updateOrderToDelivered = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment status' })
     }
 
+    // Update orderStatus and related fields
     if (orderStatus) {
       order.orderStatus = orderStatus
 
@@ -345,15 +346,32 @@ const updateOrderToDelivered = async (req, res) => {
         order.isDelivered = false
         order.deliveredAt = null
       }
+
+      // If order is refunded, also update payment status
+      if (orderStatus === 'refunded' && order.paidStatus !== 'refunded') {
+        order.paidStatus = 'refunded'
+        order.isPaid = false
+        order.paidAt = null
+      }
     }
 
+    // Update paidStatus and related fields
     if (paidStatus) {
+      order.paidStatus = paidStatus
+
       if (paidStatus === 'paid') {
         order.isPaid = true
         order.paidAt = Date.now()
-      } else if (paidStatus === 'refunded' || paidStatus === 'on hold') {
+      } else if (paidStatus === 'refunded' || paidStatus === 'on hold' || paidStatus === 'pending') {
         order.isPaid = false
         order.paidAt = null
+      }
+
+      // If payment is refunded, also update order status
+      if (paidStatus === 'refunded' && order.orderStatus !== 'refunded') {
+        order.orderStatus = 'refunded'
+        order.isDelivered = false
+        order.deliveredAt = null
       }
     }
 
