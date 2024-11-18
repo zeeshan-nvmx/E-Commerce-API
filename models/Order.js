@@ -84,11 +84,17 @@ const orderSchema = new mongoose.Schema({
   deliveredAt: {
     type: Date,
   },
+  orderStatus: {
+    type: String,
+    enum: ['in store', 'dispatched', 'delivered'],
+    default: 'in store',
+    required: true,
+  },
   shippingDetails: {
     trackingNumber: String,
     carrier: String,
     estimatedDeliveryDate: Date,
-    labelUrl: String
+    labelUrl: String,
   },
   createdAt: {
     type: Date,
