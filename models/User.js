@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const crypto = require('crypto')
+const { required } = require('joi')
 
 const addressSchema = new mongoose.Schema({
   name: String,
@@ -21,6 +22,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+  },
+  phone: {
+    type: String,
+    unique: true
   },
   password: {
     type: String,

@@ -9,7 +9,7 @@ router.get('/:id', auth, getOrderById)
 router.post('/shipping-rates', auth, getShippingRates)
 router.post('/', auth, createOrder)
 router.post('/stripe-webhook', stripe_webhook)
-router.put('/:id/deliver', auth, updateOrderToDelivered)
+router.put('/:id/status', auth, updateOrderToDelivered)
 router.get('/:id/shipping-label', auth, getShippingLabel)
 
 

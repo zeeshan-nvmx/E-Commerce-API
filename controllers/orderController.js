@@ -5,20 +5,6 @@ const royalMailAPI = require('../utils/royalMailAPI')
 const sendEmail = require('../utils/sendEmail')
 const User = require('../models/User')
 
-// const getOrders = async (req, res) => {
-//   try {
-//     let orders
-//     if (req.user.role === 'customer') {
-//       orders = await Order.find({ userId: req.user.id }).populate('items.productId').sort({ createdAt: -1 })
-//     } else {
-//       orders = await Order.find().populate('items.productId').sort({ createdAt: -1 })
-//     }
-
-//     res.json({ message: 'Orders fetched successfully', data: orders })
-//   } catch (error) {
-//     res.status(500).json({ message: 'Something went wrong while fetching orders', error: error.message })
-//   }
-// }
 
 const getOrders = async (req, res) => {
   try {
@@ -48,12 +34,15 @@ const getOrders = async (req, res) => {
     }
 
     const totalOrders = await Order.countDocuments(query)
+
+
     const orders = await Order.find(query)
       .populate('items.productId')
       .populate('userId', 'name')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
+
 
     res.json({
       message: 'Orders fetched successfully',
@@ -173,7 +162,7 @@ const createOrder = async (req, res) => {
       ${orderItems
         .map(
           (item) =>
-            `<tr><td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.color}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.size}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td><td style="border: 1px solid #ddd; padding: 8px; text-align: right;">$${item.price}</td></tr>`
+            `<tr><td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.color}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.size}</td><td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td><td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.price}</td></tr>`
         )
         .join('')}
     </tbody>
@@ -187,10 +176,10 @@ const createOrder = async (req, res) => {
   <p>Shipping Address: ${shippingAddress.name}, ${shippingAddress.line1}, ${shippingAddress.line2}, ${shippingAddress.city}, ${shippingAddress.state}, ${shippingAddress.country}, ${shippingAddress.postal_code}</p>
   <p>Billing Address: ${billingAddress.name}, ${billingAddress.line1}, ${billingAddress.line2}, ${billingAddress.city}, ${billingAddress.state}, ${billingAddress.country}, ${billingAddress.postal_code}</p>
   <p>Payment Method: ${paymentMethod}</p>
-  <p>Items Total: $${formattedItemsPrice}</p>
-  <p>Shipping: $${shippingPrice}</p>
-  <p>Tax: $${taxPrice}</p>
-  <p>Total: $${totalPrice}</p>
+  <p>Items Total: ${formattedItemsPrice}</p>
+  <p>Shipping: ${shippingPrice}</p>
+  <p>Tax: ${taxPrice}</p>
+  <p>Total: ${totalPrice}</p>
   <p>Your order will be shipped shortly. Thank you for shopping with us!</p>
 `
 
@@ -294,6 +283,41 @@ const stripe_webhook = async (req, res) => {
   res.status(200).json({ received: true })
 }
 
+// const updateOrderToDelivered = async (req, res) => {
+//   try {
+//     const order = await Order.findById(req.params.id)
+//     if (!order) {
+//       return res.status(404).json({ message: 'Order not found' })
+//     }
+
+//     const { orderStatus } = req.body
+
+//     if (!['in store', 'dispatched', 'delivered'].includes(orderStatus)) {
+//       return res.status(400).json({ message: 'Invalid order status' })
+//     }
+
+//     order.orderStatus = orderStatus
+
+//     // Update isDelivered and deliveredAt if status is set to delivered
+//     if (orderStatus === 'delivered') {
+//       order.isDelivered = true
+//       order.deliveredAt = Date.now()
+//     } else {
+//       order.isDelivered = false
+//       order.deliveredAt = null
+//     }
+
+//     const updatedOrder = await order.save()
+
+//     res.json({
+//       message: `Order status updated to ${orderStatus} successfully`,
+//       order: updatedOrder,
+//     })
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message })
+//   }
+// }
+
 const updateOrderToDelivered = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -301,18 +325,67 @@ const updateOrderToDelivered = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' })
     }
 
-    order.isDelivered = true
-    order.deliveredAt = Date.now()
+    const { orderStatus, paidStatus } = req.body
+
+    if (orderStatus && !['in store', 'dispatched', 'delivered', 'cancelled', 'refunded'].includes(orderStatus)) {
+      return res.status(400).json({ message: 'Invalid order status' })
+    }
+
+    if (paidStatus && !['pending', 'paid', 'refunded', 'on hold', 'processing'].includes(paidStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status' })
+    }
+
+    // Update orderStatus and related fields
+    if (orderStatus) {
+      order.orderStatus = orderStatus
+
+      if (orderStatus === 'delivered') {
+        order.isDelivered = true
+        order.deliveredAt = Date.now()
+      } else if (orderStatus === 'cancelled' || orderStatus === 'refunded') {
+        order.isDelivered = false
+        order.deliveredAt = null
+      }
+
+      // If order is refunded, also update payment status
+      if (orderStatus === 'refunded' && order.paidStatus !== 'refunded') {
+        order.paidStatus = 'refunded'
+        order.isPaid = false
+        order.paidAt = null
+      }
+    }
+
+    // Update paidStatus and related fields
+    if (paidStatus) {
+      order.paidStatus = paidStatus
+
+      if (paidStatus === 'paid') {
+        order.isPaid = true
+        order.paidAt = Date.now()
+      } else if (paidStatus === 'refunded' || paidStatus === 'on hold' || paidStatus === 'pending') {
+        order.isPaid = false
+        order.paidAt = null
+      }
+
+      // If payment is refunded, also update order status
+      if (paidStatus === 'refunded' && order.orderStatus !== 'refunded') {
+        order.orderStatus = 'refunded'
+        order.isDelivered = false
+        order.deliveredAt = null
+      }
+    }
 
     const updatedOrder = await order.save()
 
-    res.json({ message: 'Order delivered successfully', order: updatedOrder })
+    res.json({
+      message: 'Order updated successfully',
+      order: updatedOrder,
+    })
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 }
 
-// Get shipping label for an order
 const getShippingLabel = async (req, res) => {
   // try {
   //   const order = await Order.findById(req.params.id);

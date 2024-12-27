@@ -84,11 +84,23 @@ const orderSchema = new mongoose.Schema({
   deliveredAt: {
     type: Date,
   },
+  orderStatus: {
+    type: String,
+    enum: ['in store', 'dispatched', 'delivered', 'cancelled', 'refunded'],
+    default: 'in store',
+    required: true,
+  },
+  paidStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'refunded', 'on hold', 'processing'],
+    default: 'pending',
+    required: true,
+  },
   shippingDetails: {
     trackingNumber: String,
     carrier: String,
     estimatedDeliveryDate: Date,
-    labelUrl: String
+    labelUrl: String,
   },
   createdAt: {
     type: Date,
