@@ -3,18 +3,26 @@ const generateToken = require('../utils/generateToken')
 const sendEmail = require('../utils/sendEmail')
 const jwt = require('jsonwebtoken')
 const Joi = require('joi')
+const { isValidPhoneNumber, parsePhoneNumber } = require('libphonenumber-js')
 
-// Validation schemas
+//Validation Schemas
 const registerSchema = Joi.object({
   name: Joi.string().min(3).max(50).required(),
   email: Joi.string().email().required(),
   phone: Joi.string()
-    .pattern(/^(?:\+?88)?0[1-9]\d{8}$/) 
+    .custom((value, helpers) => {
+      if (!value) return value // Allow empty or null values
+      // Check if the phone number is valid for Bangladesh (BD) or UK (GB)
+      if (!isValidPhoneNumber(value, 'BD') && !isValidPhoneNumber(value, 'GB')) {
+        return helpers.error('any.invalid', { custom: 'Invalid phone number for BD or GB' })
+      }
+      return value
+    })
     .optional()
     .allow('', null),
-
   password: Joi.string().min(6).required(),
 }).options({ abortEarly: false })
+
 
 const loginSchema = Joi.object({
   identifier: Joi.string().required(),
