@@ -90,8 +90,8 @@ const getCategoryById = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   const schema = Joi.object({
-    name: Joi.string().trim().min(3).max(50),
-    description: Joi.string().trim().min(3).max(500),
+    name: Joi.string().trim().min(3),
+    description: Joi.string().trim().min(3),
     isSubcategory: Joi.boolean(),
     parentCategoryId: Joi.string().trim().length(24).when('isSubcategory', {
       is: true,
@@ -152,8 +152,8 @@ const updateCategory = async (req, res) => {
 
 const createCategory = async (req, res) => {
   const schema = Joi.object({
-    name: Joi.string().trim().min(3).max(50).required(),
-    description: Joi.string().trim().min(3).max(500),
+    name: Joi.string().trim().min(3).required(),
+    description: Joi.string().trim().min(3),
     isSubcategory: Joi.boolean(),
     parentCategoryId: Joi.string().trim().length(24).when('isSubcategory', {
       is: true,

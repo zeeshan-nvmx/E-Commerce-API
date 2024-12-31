@@ -90,8 +90,8 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   const schema = Joi.object({
-    name: Joi.string().trim().min(3).max(100).required(),
-    description: Joi.string().trim().min(3).max(500).required(),
+    name: Joi.string().trim().min(3).required(),
+    description: Joi.string().trim().min(3).required(),
     price: Joi.number().min(0).required(),
     featured: Joi.boolean(),
     categories: Joi.string().trim().required(),
@@ -206,8 +206,8 @@ const createProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   const schema = Joi.object({
-    name: Joi.string().trim().min(3).max(100),
-    description: Joi.string().trim().min(3).max(500),
+    name: Joi.string().trim().min(3),
+    description: Joi.string().trim().min(3),
     price: Joi.number().min(0),
     featured: Joi.boolean(),
     categories: Joi.string().trim(),
