@@ -1,47 +1,64 @@
-// controllers/blogController.js
+// controllers/blogController.js - Complete controller with video support
 const Blog = require('../models/Blog')
 const { uploadToS3, deleteFromS3 } = require('../utils/s3')
 const Joi = require('joi')
 const sharp = require('sharp')
 const slugify = require('slugify')
+const path = require('path')
 const { isValidObjectId } = require('mongoose').Types
 
-// Helper function to process and upload images
-const processAndUploadImage = async (imageFile, pathPrefix = 'blogs') => {
+// Helper function to process and upload media (images and videos)
+const processAndUploadMedia = async (file, pathPrefix = 'blogs') => {
   try {
-    const thumbnailBuffer = await sharp(imageFile.buffer)
-      .resize(800, 450, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .toBuffer()
+    const fileExt = path.extname(file.originalname).toLowerCase()
+    const isVideo = ['.mp4', '.mov', '.avi', '.webm'].includes(fileExt)
 
-    // Remove spaces from the original image name
-    const sanitizedOriginalName = imageFile.originalname.replace(/\s+/g, '')
+    // Remove spaces from the original file name
+    const sanitizedOriginalName = file.originalname.replace(/\s+/g, '')
     const timestamp = Date.now()
 
-    // Upload original image
-    const image = await uploadToS3(imageFile, `${pathPrefix}/${timestamp}_${sanitizedOriginalName}`)
+    if (isVideo) {
+      // For videos, just upload the original file
+      const videoUrl = await uploadToS3(file, `${pathPrefix}/videos/${timestamp}_${sanitizedOriginalName}`)
 
-    // Upload thumbnail
-    const thumbnail = await uploadToS3({ ...imageFile, buffer: thumbnailBuffer }, `${pathPrefix}/thumbnails/${timestamp}_thumb_${sanitizedOriginalName}`)
+      return {
+        type: 'video',
+        url: videoUrl,
+      }
+    } else {
+      // For images, create thumbnail and upload both
+      const thumbnailBuffer = await sharp(file.buffer)
+        .resize(800, 450, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .toBuffer()
 
-    return {
-      image,
-      thumbnail,
+      // Upload original image
+      const imageUrl = await uploadToS3(file, `${pathPrefix}/images/${timestamp}_${sanitizedOriginalName}`)
+
+      // Upload thumbnail
+      const thumbnailUrl = await uploadToS3({ ...file, buffer: thumbnailBuffer }, `${pathPrefix}/thumbnails/${timestamp}_thumb_${sanitizedOriginalName}`)
+
+      return {
+        type: 'image',
+        url: imageUrl,
+        thumbnail: thumbnailUrl,
+      }
     }
   } catch (error) {
-    console.error('Error in processAndUploadImage:', error)
+    console.error('Error in processAndUploadMedia:', error)
     throw error
   }
 }
 
 // Process and upload media files from rich text editor content
 const processRichTextContent = async (content) => {
+  let processedContent = content
+
   // Regular expression to find base64 encoded images in content
   const base64Regex = /data:image\/(\w+);base64,([^"]+)/g
   let match
-  let processedContent = content
 
   while ((match = base64Regex.exec(content)) !== null) {
     const mimeType = match[1]
@@ -57,11 +74,25 @@ const processRichTextContent = async (content) => {
 
     // Upload to S3
     try {
-      const s3Url = await uploadToS3(file, `blogs/embedded/${file.originalname}`)
+      const s3Url = await uploadToS3(file, `blogs/embedded/images/${file.originalname}`)
       // Replace base64 data with S3 URL in content
       processedContent = processedContent.replace(match[0], s3Url)
     } catch (error) {
       console.error('Error uploading embedded image:', error)
+    }
+  }
+
+  // Process video iframe embeds (replace with secure URLs if needed)
+  // This would handle embedded videos from YouTube, Vimeo, etc.
+  const iframeRegex = /<iframe[^>]*src=['"](https?:\/\/[^'"]+)['"]/g
+
+  while ((match = iframeRegex.exec(content)) !== null) {
+    const videoUrl = match[1]
+    // Here you could validate the URL, transform it, etc.
+    // For example, ensure YouTube embeds use https and privacy-enhanced mode
+    if (videoUrl.includes('youtube.com/embed/')) {
+      const secureUrl = videoUrl.replace('http://', 'https://').replace('youtube.com/embed/', 'youtube-nocookie.com/embed/')
+      processedContent = processedContent.replace(videoUrl, secureUrl)
     }
   }
 
@@ -196,15 +227,32 @@ const createBlog = async (req, res) => {
     // Process cover image if provided
     let coverImage = ''
     let coverImageThumbnail = ''
+    let video = ''
 
-    if (req.file) {
-      try {
-        const result = await processAndUploadImage(req.file)
-        coverImage = result.image
-        coverImageThumbnail = result.thumbnail
-      } catch (error) {
-        console.error('Error processing cover image:', error)
-        return res.status(500).json({ message: 'Error processing cover image', error: error.message })
+    if (req.files) {
+      // Handle cover image
+      if (req.files.coverImage && req.files.coverImage.length > 0) {
+        try {
+          const mediaResult = await processAndUploadMedia(req.files.coverImage[0], 'blogs')
+          if (mediaResult.type === 'image') {
+            coverImage = mediaResult.url
+            coverImageThumbnail = mediaResult.thumbnail
+          }
+        } catch (error) {
+          console.error('Error processing cover image:', error)
+        }
+      }
+
+      // Handle video
+      if (req.files.video && req.files.video.length > 0) {
+        try {
+          const mediaResult = await processAndUploadMedia(req.files.video[0], 'blogs')
+          if (mediaResult.type === 'video') {
+            video = mediaResult.url
+          }
+        } catch (error) {
+          console.error('Error processing video:', error)
+        }
       }
     }
 
@@ -219,6 +267,7 @@ const createBlog = async (req, res) => {
       summary: summary || title,
       coverImage,
       coverImageThumbnail,
+      video,
       author: req.user.id,
       published: published || false,
       publishedAt: published ? Date.now() : null,
@@ -240,6 +289,7 @@ const updateBlog = async (req, res) => {
     summary: Joi.string().trim().max(500),
     tags: Joi.string().trim(),
     published: Joi.boolean(),
+    removeVideo: Joi.boolean(),
   }).options({ abortEarly: false })
 
   const { error } = schema.validate(req.body)
@@ -247,7 +297,7 @@ const updateBlog = async (req, res) => {
     return res.status(400).json({ message: error.details.map((err) => err.message).join(', ') })
   }
 
-  const { title, content, summary, tags, published } = req.body
+  const { title, content, summary, tags, published, removeVideo } = req.body
   try {
     const blog = await Blog.findById(req.params.id)
 
@@ -286,24 +336,56 @@ const updateBlog = async (req, res) => {
       }
     }
 
-    // Process cover image if a new one is provided
-    if (req.file) {
-      try {
-        // Delete existing cover image if it exists
-        if (blog.coverImage) {
-          await deleteFromS3(blog.coverImage.split('/').pop())
-        }
-        if (blog.coverImageThumbnail) {
-          await deleteFromS3(blog.coverImageThumbnail.split('/').pop())
-        }
+    // Process media files if provided
+    if (req.files) {
+      // Handle cover image
+      if (req.files.coverImage && req.files.coverImage.length > 0) {
+        try {
+          // Delete existing cover image if it exists
+          if (blog.coverImage) {
+            await deleteFromS3(blog.coverImage.split('/').pop())
+          }
+          if (blog.coverImageThumbnail) {
+            await deleteFromS3(blog.coverImageThumbnail.split('/').pop())
+          }
 
-        // Process and upload new cover image
-        const result = await processAndUploadImage(req.file)
-        blog.coverImage = result.image
-        blog.coverImageThumbnail = result.thumbnail
+          // Process and upload new cover image
+          const mediaResult = await processAndUploadMedia(req.files.coverImage[0], 'blogs')
+          if (mediaResult.type === 'image') {
+            blog.coverImage = mediaResult.url
+            blog.coverImageThumbnail = mediaResult.thumbnail
+          }
+        } catch (error) {
+          console.error('Error processing cover image:', error)
+        }
+      }
+
+      // Handle video
+      if (req.files.video && req.files.video.length > 0) {
+        try {
+          // Delete existing video if it exists
+          if (blog.video) {
+            await deleteFromS3(blog.video.split('/').pop())
+          }
+
+          // Process and upload new video
+          const mediaResult = await processAndUploadMedia(req.files.video[0], 'blogs')
+          if (mediaResult.type === 'video') {
+            blog.video = mediaResult.url
+          }
+        } catch (error) {
+          console.error('Error processing video:', error)
+        }
+      }
+    }
+
+    // Remove video if requested
+    if (removeVideo && blog.video) {
+      try {
+        await deleteFromS3(blog.video.split('/').pop())
+        blog.video = ''
       } catch (error) {
-        console.error('Error processing cover image:', error)
-        return res.status(500).json({ message: 'Error processing cover image', error: error.message })
+        console.error('Error removing video:', error)
       }
     }
 
@@ -339,6 +421,15 @@ const deleteBlog = async (req, res) => {
         await deleteFromS3(blog.coverImageThumbnail.split('/').pop())
       } catch (error) {
         console.error('Error deleting cover image thumbnail from S3:', error)
+      }
+    }
+
+    // Delete video if it exists
+    if (blog.video) {
+      try {
+        await deleteFromS3(blog.video.split('/').pop())
+      } catch (error) {
+        console.error('Error deleting video from S3:', error)
       }
     }
 

@@ -25,6 +25,9 @@ const blogSchema = new Schema({
   coverImageThumbnail: {
     type: String,
   },
+  video: {
+    type: String,
+  },
   author: {
     type: Schema.Types.ObjectId,
     ref: 'User',
